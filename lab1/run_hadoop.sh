@@ -3,4 +3,11 @@ if [ -d "$DIR" ]; then
     printf '%s\n' "Removing output directory"
     rm -rf "$DIR"
 fi
-hadoop jar /usr/local/hadoop/hadoop-streaming.jar -files src/mapper.py,src/reducer.py -mapper src/mapper.py -reducer src/reducer.py -input data/book.txt -output output
+
+if [ $1 == 1 ]; then
+	hadoop jar /usr/local/hadoop/hadoop-streaming.jar -files part1/mapper.py,part1/reducer.py -mapper part1/mapper.py -reducer part1/reducer.py -input data/book.txt -output output
+fi
+
+if [ $1 == 2 ]; then
+	hadoop jar /usr/local/hadoop/hadoop-streaming.jar -files part2/mapper.py,part2/reducer.py -mapper part2/mapper.py -reducer part2/reducer.py -input data/book.txt -output output
+fi
