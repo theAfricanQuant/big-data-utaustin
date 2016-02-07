@@ -11,3 +11,8 @@ fi
 if [ $1 == 2 ]; then
 	hadoop jar /usr/local/hadoop/hadoop-streaming.jar -files part2/mapper.py,part2/reducer.py -mapper part2/mapper.py -reducer part2/reducer.py -input data/book.txt -output output
 fi
+
+if [ $1 == 2.2 ]; then
+	hadoop jar /usr/local/hadoop/hadoop-streaming.jar -files part2/mapper.py,part2/reducer_topten.py -mapper part2/mapper.py -reducer part2/reducer_topten.py -input data/book.txt -output output
+fi
+
