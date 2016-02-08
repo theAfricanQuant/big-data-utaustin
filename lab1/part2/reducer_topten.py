@@ -28,6 +28,7 @@ def updateTopTen():
 # same as the mapper, input comes from the standard input line by line
 for line in sys.stdin:
     # Get the bigram
+    line = line.strip()
     bigram = line[:-2]
 
     if bigram == currentBigram:
