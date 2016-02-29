@@ -100,10 +100,17 @@ def move_centroids(centroids, assignments):
 
 # Runs k means iter number of times.
 def k_means(centroids, width, height, iter=100):
+    old_centroids = centroids
     for i in xrange(iter):
         assignments = assign(centroids, width, height)
         centroids = move_centroids(centroids, assignments)
-    
+
+        # Check if centroids have convereged. If so, we're done
+        if set(old_centroids) == set(centroids):
+            break
+
+        old_centroids = centroids
+
     return centroids
 
 
