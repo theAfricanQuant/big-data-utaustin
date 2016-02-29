@@ -46,7 +46,6 @@ def build_assignments_dict(centroids):
 # Returns a dict where the keys are the centroid locations,
 # and the values are a list of points that are assigned to that centroid.
 def assign(centroids, width, height):
-    print "In assign"
     assignments = build_assignments_dict(centroids)
 
     for i in xrange(width):
@@ -57,9 +56,7 @@ def assign(centroids, width, height):
             # Find distance to each centroid and keep the smallest
             for centroid in centroids:
                 first_term = pow((centroid[1] - j), 2)
-                #print first_term
                 second_term = pow((centroid[0] - i), 2)
-                #print second_term
                 distance = math.sqrt(first_term + second_term)
 
                 if distance < smallest_distance:
@@ -76,18 +73,52 @@ def assign(centroids, width, height):
     return assignments
 
 
-def move_centroids():
-    print "In move centroids"
+# Computes the average location for a given list of (x, y) pairs.
+def get_average_location(points):
+    count, x, y = 0, 0, 0
+    for point in points:
+        count += 1
+        x += point[0]
+        y += point[1]
 
+    x = x / count
+    y = y / count
+
+    return (x, y)
+
+
+# Creates a new list of centroids, given the current centroids
+# and the dictionary of current assignments
+def move_centroids(centroids, assignments):
+    new_centroids = list()
+    
+    for centroid in centroids:
+        average = get_average_location(assignments[centroid])
+        new_centroids.append(average)
+
+    return new_centroids
 
 # Runs k means iter number of times.
 def k_means(centroids, width, height, iter=100):
     for i in xrange(iter):
-        print assign(centroids, width, height)
-        move_centroids()
+        assignments = assign(centroids, width, height)
+        centroids = move_centroids(centroids, assignments)
+    
+    return centroids
 
-    return
 
+# Determines the color of each pixel at each point in the points list.
+# Returns a list of colors as (R, G, B)
+def get_colors(points, px):
+    colors = list()
+
+    for point in points:
+        colors.append(px[point[0], point[1]])
+
+    return colors
+
+
+## START EXECUTION ##
 image_name, k = parse_args()
 
 # Read image
@@ -101,12 +132,15 @@ except (IOError):
 width, height = image.size
 px = image.load()
 
-
 # Get inital random pixels to act as centriods
 centroids = random_pixels(k, width, height)
 
 # Run K-means
-k_means(centroids, width, height, iter=1)
+# TODO: stop if assignments don't change. Right now it does 100 iterations regardless.
+centroids = k_means(centroids, width, height, iter=5)
+
+# Get the compressed palette
+palette = get_colors(centroids, px)
 
 # Pixel modification (this is just an example. You may delete this line)
 #px[0, 0] = (0, 0, 0);
