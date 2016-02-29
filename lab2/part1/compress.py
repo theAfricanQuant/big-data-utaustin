@@ -190,7 +190,6 @@ palette = get_colors(centroids, px)
 
 # Change image
 change_image(width, height, px, palette)
-image.show()
 
 # Save the final image
 image.save("result.png")
