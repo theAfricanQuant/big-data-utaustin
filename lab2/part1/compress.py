@@ -118,6 +118,39 @@ def get_colors(points, px):
     return colors
 
 
+# Finds the color in a palette that is closest to the given color.
+def closest_color(color, palette):
+    smallest_distance = sys.maxint
+    closest_color = None
+
+    for c in palette:
+        first_term = pow((c[0] - color[0]), 2)
+        second_term = pow((c[1] - color[1]), 2)
+        third_term = pow((c[2] - color[2]), 2)
+        distance = math.sqrt(first_term + second_term + third_term)
+
+        if distance < smallest_distance:
+            smallest_distance = distance
+            closest_color = c
+
+    if closest_color is None:
+        print "Error. Closest color is None"
+        sys.exit()
+
+    return closest_color
+
+
+# Changes the image based on the new palette.
+# Each pixel is replaced with the color on the palette that is closest
+# to its original color.
+def change_image(width, height, px, palette):
+    for i in xrange(width):
+        for j in xrange(height):
+            px[i, j] = closest_color(px[i, j], palette)
+
+    return px
+
+
 ## START EXECUTION ##
 image_name, k = parse_args()
 
@@ -137,17 +170,15 @@ centroids = random_pixels(k, width, height)
 
 # Run K-means
 # TODO: stop if assignments don't change. Right now it does 100 iterations regardless.
-centroids = k_means(centroids, width, height, iter=5)
+centroids = k_means(centroids, width, height)
 
 # Get the compressed palette
 palette = get_colors(centroids, px)
 
-# Pixel modification (this is just an example. You may delete this line)
-#px[0, 0] = (0, 0, 0);
-
-# Display the image (this is just an example. You may delete this line)
+# Change image
+change_image(width, height, px, palette)
 #image.show()
 
-# Save the image (this is just an example. You may delete this line)
-#image.save("DELETE_ME.png")
+# Save the final image
+image.save("result.png")
 
