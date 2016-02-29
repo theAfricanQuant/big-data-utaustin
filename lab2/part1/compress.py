@@ -176,7 +176,6 @@ px = image.load()
 centroids = random_pixels(k, width, height)
 
 # Run K-means
-# TODO: stop if assignments don't change. Right now it does 100 iterations regardless.
 centroids = k_means(centroids, width, height)
 
 # Get the compressed palette
