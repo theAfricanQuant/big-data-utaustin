@@ -19,8 +19,7 @@ def parse_args():
     return sys.argv[1], int(sys.argv[2])
 
 
-# Creates a list of k random pixel locations, given the width and height of the image,
-# as well as the pixels of the image.
+# Creates a list of k random locations, given the width and height of the image.
 def random_pixels(k, width, height):
     random_pixels = list()
     for i in xrange(k):
@@ -31,8 +30,8 @@ def random_pixels(k, width, height):
     return random_pixels
 
 
-# Builds a dict of tuples where the first item is a centroid location
-# and the second item is an empty list (for assignments)
+# Builds a dict of  where the key is a centroid location
+# and the value is an empty list (for assignments).
 def build_assignments_dict(centroids):
     assignments = dict()
 
@@ -75,7 +74,11 @@ def assign(centroids, width, height):
 
 # Computes the average location for a given list of (x, y) pairs.
 def get_average_location(points):
-    count, x, y = 0, 0, 0
+    # Empty list, there is no average to compute
+    if not points:
+        return None
+
+    count, x, y = 0, 0, 0   
     for point in points:
         count += 1
         x += point[0]
@@ -88,13 +91,17 @@ def get_average_location(points):
 
 
 # Creates a new list of centroids, given the current centroids
-# and the dictionary of current assignments
+# and the dictionary of current assignments.
 def move_centroids(centroids, assignments):
     new_centroids = list()
     
     for centroid in centroids:
         average = get_average_location(assignments[centroid])
-        new_centroids.append(average)
+        if average is None:
+            # Keep the same centroid location if there is no average
+            new_centroids.append(centroid)
+        else:
+            new_centroids.append(average)
 
     return new_centroids
 
@@ -115,7 +122,7 @@ def k_means(centroids, width, height, iter=100):
 
 
 # Determines the color of each pixel at each point in the points list.
-# Returns a list of colors as (R, G, B)
+# Returns a list of colors as (R, G, B).
 def get_colors(points, px):
     colors = list()
 
@@ -183,7 +190,7 @@ palette = get_colors(centroids, px)
 
 # Change image
 change_image(width, height, px, palette)
-#image.show()
+image.show()
 
 # Save the final image
 image.save("result.png")
