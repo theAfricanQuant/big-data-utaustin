@@ -143,7 +143,7 @@ def read_centroids():
     centroids = list()
     with open('centroids.txt', 'r') as f:
         for line in f:
-            age, most_watched_genre, highest_rated_genre = line.split()
+            age, most_watched_genre, highest_rated_genre = eval(line)
             centroids.append((age, most_watched_genre, highest_rated_genre))
 
     return centroids
@@ -154,7 +154,10 @@ class MRMovielens(MRJob):
     def steps(self):
 	# This function defines the steps your job will follow. If you want to chain jobs, you can just have multiple steps.
         return [
-            MRStep(mapper_init=self.first_step_init, mapper=self.k_means_mapper, reducer=self.k_means_reducer),
+            MRStep(mapper_init=self.first_step_init,
+                   mapper=self.k_means_mapper,
+                   reducer_init=self.before_reducer,
+                   reducer=self.k_means_reducer),
         ]
 
 
@@ -196,9 +199,16 @@ class MRMovielens(MRJob):
         yield closest_centroid, attributes
 
 
+    def before_reducer(self):
+        print "Before reducer"
+        open('centroids.txt', 'w').close()
+
+
     def k_means_reducer(self, key, values):
         print "Old centroid: %s" % key
 
+        # For a given key, we have a list of users that belong to that key
+        # Average their locations to get a new centroid
         count, age, most_watched_genre, highest_rated_genre = 0, 0, 0, 0
         for value in values:
             count += 1
@@ -210,9 +220,13 @@ class MRMovielens(MRJob):
         most_watched_genre /= count
         highest_rated_genre /= count
 
-        print "New centroid: %s, %s, %s" % (age, most_watched_genre, highest_rated_genre)
-        # For a given key, we have a list of users that belong to that key
-        # Average their locations to get a new centroid
+        new_centroid = (age, most_watched_genre, highest_rated_genre)
+        print "New centroid: %s" % list(new_centroid)
+        
+        # Save the new centroid
+        with open('centroids.txt', 'a') as f:
+            f.write("%s\n" % list(new_centroid))
+
         yield key, values
 
 
