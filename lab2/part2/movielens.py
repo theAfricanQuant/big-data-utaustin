@@ -1,6 +1,9 @@
 from mrjob.job import MRJob
 from mrjob.step import MRStep
 
+import sys
+import math
+
 from random import randint, choice
 
 # Given an input line from a movie item, this will return a list of
@@ -118,7 +121,7 @@ def get_attributes_for_user(user):
             highest_rated_number = rating_avg
             highest_rated_genre = key
 
-    return (age, most_watched_genre, highest_rated_genre)
+    return (int(age), most_watched_genre, highest_rated_genre)
 
 
 # Creates new random centroids. Writes these to a file.
@@ -136,6 +139,16 @@ def create_centroids(users):
     return centroids
 
 
+def read_centroids():
+    centroids = list()
+    with open('centroids.txt', 'r') as f:
+        for line in f:
+            age, most_watched_genre, highest_rated_genre = line.split()
+            centroids.append((age, most_watched_genre, highest_rated_genre))
+
+    return centroids
+
+
 class MRMovielens(MRJob):
 
     def steps(self):
@@ -147,29 +160,60 @@ class MRMovielens(MRJob):
 
     def first_step_init(self):
         print "First Step Init"
-        users = build_database()
-        self.centroids = create_centroids(users)
+        self.users = build_database()
+        self.centroids = create_centroids(self.users)
 
 
-    def read_centroids(self):
-        self.centroids = list()
-        with open('centroids.txt', 'r') as f:
-            for line in f:
-                age, most_watched_genre, highest_rated_genre = line.split()
-                centroids.append((age, most_watched_genre, highest_rated_genre))
+    def before_mapper(self):
+        print "Before Mapper"
+        self.users = open_database()
+        self.centroids = read_centroids()
 
 
     def k_means_mapper(self, _, line):
         # Calculate the distance to each centroid
-        
-        # Take the closest one, and yield (centroid, user) pair
-        yield "x", 1
+        smallest_distance = sys.maxint
+        closest_centroid = None
+
+        fields = line.split("|")
+        user_id = fields[0]
+        attributes = get_attributes_for_user(self.users[user_id])
+
+        for centroid in self.centroids:
+            age_diff = pow(centroid[0] - attributes[0], 2)
+            most_watched_genre_diff = pow(centroid[1] - attributes[1], 2)
+            highest_rated_genre_diff = pow(centroid[2] - attributes[2], 2)
+
+            distance = math.sqrt(age_diff + most_watched_genre_diff + highest_rated_genre_diff)
+
+            if distance < smallest_distance:
+                smallest_distance = distance
+                closest_centroid = centroid
+
+        print "%s is closest to %s" % (attributes, closest_centroid)
+
+        # Take the closest one, and yield (centroid, user attributes) pair
+        yield closest_centroid, attributes
 
 
     def k_means_reducer(self, key, values):
+        print "Old centroid: %s" % key
+
+        count, age, most_watched_genre, highest_rated_genre = 0, 0, 0, 0
+        for value in values:
+            count += 1
+            age += value[0]
+            most_watched_genre += value[1]
+            highest_rated_genre += value[2]
+
+        age /= count
+        most_watched_genre /= count
+        highest_rated_genre /= count
+
+        print "New centroid: %s, %s, %s" % (age, most_watched_genre, highest_rated_genre)
         # For a given key, we have a list of users that belong to that key
         # Average their locations to get a new centroid
-        yield key, sum(values)
+        yield key, values
 
 
 if __name__ == '__main__':
