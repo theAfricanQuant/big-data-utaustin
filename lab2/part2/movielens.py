@@ -1,7 +1,7 @@
 from mrjob.job import MRJob
 from mrjob.step import MRStep
 
-from random import randint
+from random import randint, choice
 
 # Given an input line from a movie item, this will return a list of
 # numbers that correspond to the genres that the movie item belongs to.
@@ -34,7 +34,7 @@ def build_ratings_dict():
 
 
 # Gives a list of k random numbers between 0 and upper_bound.
-def random_numbers(k, upper_bound):
+def random_numbers(k, upper_bound=943):
     numbers = list()
     for i in xrange(k):
         numbers.append(randint(0, upper_bound))
@@ -91,6 +91,49 @@ def build_database():
     
     # Finally write this to the database file so we can use it later
     write_to_file(users)
+    return users
+
+
+# Returns a tuple of attributes for a selected user. This tuple is
+# (age, most_watched_genre_number, highest_rated_genre_number).
+def get_attributes_for_user(user):
+    age = user[0]
+
+    genre_dict = user[1]
+
+    most_watched_genre = 0
+    most_watched_number = 0
+    highest_rated_genre = 0
+    highest_rated_number = 0.0
+    for key, value in genre_dict.iteritems():
+        watch_count = value[0]
+        rating_sum = value[1]
+        rating_avg = float(rating_sum) / float(watch_count) if watch_count != 0 else 0
+
+        if watch_count > most_watched_number:
+            most_watched_number = watch_count
+            most_watched_genre = key
+
+        if rating_avg > highest_rated_number:
+            highest_rated_number = rating_avg
+            highest_rated_genre = key
+
+    return (age, most_watched_genre, highest_rated_genre)
+
+
+# Creates new random centroids. Writes these to a file.
+def create_centroids(users):
+    centroids = list()
+
+    for i in xrange(3):
+        key = choice(users.keys())
+        centroids.append(get_attributes_for_user(users[key]))
+
+    # Write to file
+    with open('centroids.txt', 'w') as f:
+        f.write("%s" % centroids)
+
+    return centroids
 
 
 class MRMovielens(MRJob):
@@ -104,7 +147,16 @@ class MRMovielens(MRJob):
 
     def first_step_init(self):
         print "First Step Init"
-        build_database()
+        users = build_database()
+        self.centroids = create_centroids(users)
+
+
+    def read_centroids(self):
+        self.centroids = list()
+        with open('centroids.txt', 'r') as f:
+            for line in f:
+                age, most_watched_genre, highest_rated_genre = line.split()
+                centroids.append((age, most_watched_genre, highest_rated_genre))
 
 
     def k_means_mapper(self, _, line):
