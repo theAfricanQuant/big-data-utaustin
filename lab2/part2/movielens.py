@@ -6,6 +6,48 @@ import math
 
 from random import randint, choice
 
+# Returns the number we want to represent the genre, given the index number
+def map_genre_number(index):
+    if index == 0:
+        return 0
+    elif index == 1:
+        return 1
+    elif index == 2:
+        return 2
+    elif index == 3:
+        return 3
+    elif index == 4:
+        return 4
+    elif index == 5:
+        return 5
+    elif index == 6:
+        return 6
+    elif index == 7:
+        return 7
+    elif index == 8:
+        return 8
+    elif index == 9:
+        return 9
+    elif index == 10:
+        return 10
+    elif index == 11:
+        return 11
+    elif index == 12:
+        return 12
+    elif index == 13:
+        return 13
+    elif index == 14:
+        return 14
+    elif index == 15:
+        return 15
+    elif index == 16:
+        return 16
+    elif index == 17:
+        return 17
+    else:
+        return 18
+
+
 # Given an input line from a movie item, this will return a list of
 # numbers that correspond to the genres that the movie item belongs to.
 def get_genre_numbers(movie):
@@ -18,7 +60,7 @@ def get_genre_numbers(movie):
 
         # If the movie is in this genre, add the number to the list
         if int(movie[index]) == 1:
-            genres.append(i)
+            genres.append(map_genre_number(i))
 
     return genres
 
@@ -128,13 +170,12 @@ def get_attributes_for_user(user):
 def create_centroids(users):
     centroids = list()
 
-    for i in xrange(3):
-        key = choice(users.keys())
-        centroids.append(get_attributes_for_user(users[key]))
-
-    # Write to file
     with open('centroids.txt', 'w') as f:
-        f.write("%s" % centroids)
+        for i in xrange(10):
+            key = choice(users.keys())
+            attributes = get_attributes_for_user(users[key])
+            centroids.append(list(attributes))
+            f.write("%s\n" % list(attributes))
 
     return centroids
 
@@ -143,8 +184,8 @@ def read_centroids():
     centroids = list()
     with open('centroids.txt', 'r') as f:
         for line in f:
-            age, most_watched_genre, highest_rated_genre = eval(line)
-            centroids.append((age, most_watched_genre, highest_rated_genre))
+            attributes = eval(line)
+            centroids.append(attributes)
 
     return centroids
 
@@ -155,6 +196,10 @@ class MRMovielens(MRJob):
 	# This function defines the steps your job will follow. If you want to chain jobs, you can just have multiple steps.
         return [
             MRStep(mapper_init=self.first_step_init,
+                   mapper=self.k_means_mapper,
+                   reducer_init=self.before_reducer,
+                   reducer=self.k_means_reducer),
+            MRStep(mapper_init=self.before_mapper,
                    mapper=self.k_means_mapper,
                    reducer_init=self.before_reducer,
                    reducer=self.k_means_reducer),
@@ -227,7 +272,7 @@ class MRMovielens(MRJob):
         with open('centroids.txt', 'a') as f:
             f.write("%s\n" % list(new_centroid))
 
-        yield key, values
+        yield "dummy", 1
 
 
 if __name__ == '__main__':
