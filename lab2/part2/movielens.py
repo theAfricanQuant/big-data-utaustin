@@ -241,7 +241,7 @@ class MRMovielens(MRJob):
         print "%s is closest to %s" % (attributes, closest_centroid)
 
         # Take the closest one, and yield (centroid, user attributes) pair
-        yield closest_centroid, attributes
+        yield closest_centroid, (attributes, line)
 
 
     def before_reducer(self):
@@ -256,10 +256,14 @@ class MRMovielens(MRJob):
         # Average their locations to get a new centroid
         count, age, most_watched_genre, highest_rated_genre = 0, 0, 0, 0
         for value in values:
+            attributes = value[0]
+            line = value[1]
             count += 1
-            age += value[0]
-            most_watched_genre += value[1]
-            highest_rated_genre += value[2]
+            age += attributes[0]
+            most_watched_genre += attributes[1]
+            highest_rated_genre += attributes[2]
+
+            yield None, line
 
         age /= count
         most_watched_genre /= count
@@ -267,12 +271,11 @@ class MRMovielens(MRJob):
 
         new_centroid = (age, most_watched_genre, highest_rated_genre)
         print "New centroid: %s" % list(new_centroid)
-        
+        print "Count: %s" % count
+
         # Save the new centroid
         with open('centroids.txt', 'a') as f:
             f.write("%s\n" % list(new_centroid))
-
-        yield "dummy", 1
 
 
 if __name__ == '__main__':
