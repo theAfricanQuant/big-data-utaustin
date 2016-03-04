@@ -150,6 +150,10 @@ def get_attributes_for_user(user):
     most_watched_number = 0
     highest_rated_genre = 0
     highest_rated_number = 0.0
+
+    average_comedy_rating = float(genre_dict[7][1]) / float(genre_dict[7][0]) if genre_dict[7][0] != 0 else 0
+    avg_comedy_rating = int(average_comedy_rating)
+
     for key, value in genre_dict.iteritems():
         if key == 18: continue
 
@@ -165,11 +169,12 @@ def get_attributes_for_user(user):
             highest_rated_number = rating_avg
             highest_rated_genre = key
 
-    return (int(age), map_genre_number(most_watched_genre), map_genre_number(highest_rated_genre))
+    #return (int(age), map_genre_number(most_watched_genre), map_genre_number(highest_rated_genre))
+    return (int(age), avg_comedy_rating)
 
 
 # Creates k new random centroids. Writes these to a file.
-def create_centroids(users, k=3):
+def create_centroids(users, k=10):
     centroids = list()
 
     for i in xrange(k):
@@ -184,7 +189,7 @@ def create_centroids(users, k=3):
     return centroids
 
 
-def read_centroids(k=3):
+def read_centroids(k=10):
     centroids = list()
 
     for i in xrange(k):
@@ -204,23 +209,20 @@ class MRMovielens(MRJob):
         jobs = [
             MRStep(mapper_init=self.first_step_init,
                    mapper=self.k_means_mapper,
-                   #reducer_init=self.before_reducer,
                    reducer=self.k_means_reducer),
         ]
 
-        # Add 98 normal MR jobs
+        # Add 49 normal MR jobs
         for i in xrange(49):
             jobs.append(
                 MRStep(mapper_init=self.before_mapper,
                        mapper=self.k_means_mapper,
-                       #reducer_init=self.before_reducer,
                        reducer=self.k_means_reducer))
 
-        # Add the last job
+        # Add the last job - final clustering and output of results
         jobs.append(
             MRStep(mapper_init=self.before_mapper,
                    mapper=self.k_means_mapper,
-                   #reducer_init=self.before_reducer,
                    reducer=self.final_reducer))
 
         return jobs
@@ -247,16 +249,15 @@ class MRMovielens(MRJob):
 
         for centroid in self.centroids:
             age_diff = pow(centroid[0] - attributes[0], 2)
-            most_watched_genre_diff = pow(centroid[1] - attributes[1], 2)
-            highest_rated_genre_diff = pow(centroid[2] - attributes[2], 2)
+            #most_watched_genre_diff = pow(centroid[1] - attributes[1], 2)
+            #highest_rated_genre_diff = pow(centroid[2] - attributes[2], 2)
+            comedy_diff = pow(centroid[1] - attributes[1], 2)
 
-            distance = math.sqrt(age_diff + most_watched_genre_diff + highest_rated_genre_diff)
+            distance = math.sqrt((2*age_diff) + comedy_diff) #most_watched_genre_diff + highest_rated_genre_diff)
 
             if distance < smallest_distance:
                 smallest_distance = distance
                 closest_centroid = centroid
-
-        #print "%s is closest to %s" % (attributes, closest_centroid)
 
         # Take the closest one, and yield (centroid, user attributes) pair
         yield closest_centroid, (attributes, line)
@@ -265,25 +266,27 @@ class MRMovielens(MRJob):
     def k_means_reducer(self, key, values):
         # For a given key, we have a list of users that belong to that key
         # Average their locations to get a new centroid
-        count, age, most_watched_genre, highest_rated_genre = 0, 0, 0, 0
+        count, age, comedy = 0, 0, 0 #most_watched_genre, highest_rated_genre = 0, 0, 0, 0
         for value in values:
             attributes = value[0]
             line = value[1]
             count += 1
             age += attributes[0]
-            most_watched_genre += attributes[1]
-            highest_rated_genre += attributes[2]
+            #most_watched_genre += attributes[1]
+            #highest_rated_genre += attributes[2]
+            comedy += attributes[1]
 
             yield None, line
 
         age /= count
-        most_watched_genre /= count
-        highest_rated_genre /= count
+        #most_watched_genre /= count
+        #highest_rated_genre /= count
+        comedy /= count
 
-        new_centroid = (age, most_watched_genre, highest_rated_genre, key[3])
+        new_centroid = (age, comedy, key[2]) #most_watched_genre, highest_rated_genre, key[3])
 
         # Save the new centroid
-        filename = "centroid%s.txt" % key[3]
+        filename = "centroid%s.txt" % key[2]
         with open(filename, 'w') as f:
             f.write("%s\n" % list(new_centroid))
 
