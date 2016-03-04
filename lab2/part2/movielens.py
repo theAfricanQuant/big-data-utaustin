@@ -9,43 +9,43 @@ from random import randint, choice
 # Returns the number we want to represent the genre, given the index number
 def map_genre_number(index):
     if index == 0:
-        return 0
+        return 18
     elif index == 1:
-        return 1
-    elif index == 2:
-        return 2
-    elif index == 3:
-        return 3
-    elif index == 4:
-        return 4
-    elif index == 5:
         return 5
+    elif index == 2:
+        return 4
+    elif index == 3:
+        return 1
+    elif index == 4:
+        return 0
+    elif index == 5:
+        return 2
     elif index == 6:
-        return 6
-    elif index == 7:
-        return 7
-    elif index == 8:
-        return 8
-    elif index == 9:
         return 9
-    elif index == 10:
+    elif index == 7:
         return 10
-    elif index == 11:
-        return 11
-    elif index == 12:
-        return 12
-    elif index == 13:
+    elif index == 8:
+        return 6
+    elif index == 9:
         return 13
+    elif index == 10:
+        return 8
+    elif index == 11:
+        return 17
+    elif index == 12:
+        return 3
+    elif index == 13:
+        return 12
     elif index == 14:
-        return 14
+        return 7
     elif index == 15:
-        return 15
+        return 14
     elif index == 16:
         return 16
     elif index == 17:
-        return 17
+        return 15
     else:
-        return 18
+        return 11
 
 
 # Given an input line from a movie item, this will return a list of
@@ -60,7 +60,7 @@ def get_genre_numbers(movie):
 
         # If the movie is in this genre, add the number to the list
         if int(movie[index]) == 1:
-            genres.append(map_genre_number(i))
+            genres.append(i)
 
     return genres
 
@@ -151,6 +151,8 @@ def get_attributes_for_user(user):
     highest_rated_genre = 0
     highest_rated_number = 0.0
     for key, value in genre_dict.iteritems():
+        if key == 18: continue
+
         watch_count = value[0]
         rating_sum = value[1]
         rating_avg = float(rating_sum) / float(watch_count) if watch_count != 0 else 0
@@ -163,7 +165,7 @@ def get_attributes_for_user(user):
             highest_rated_number = rating_avg
             highest_rated_genre = key
 
-    return (int(age), most_watched_genre, highest_rated_genre)
+    return (int(age), map_genre_number(most_watched_genre), map_genre_number(highest_rated_genre))
 
 
 # Creates new random centroids. Writes these to a file.
@@ -193,27 +195,38 @@ def read_centroids():
 class MRMovielens(MRJob):
 
     def steps(self):
-	# This function defines the steps your job will follow. If you want to chain jobs, you can just have multiple steps.
-        return [
+	# Start with the first job that initalizes everything
+        jobs = [
             MRStep(mapper_init=self.first_step_init,
-                   mapper=self.k_means_mapper,
-                   reducer_init=self.before_reducer,
-                   reducer=self.k_means_reducer),
-            MRStep(mapper_init=self.before_mapper,
                    mapper=self.k_means_mapper,
                    reducer_init=self.before_reducer,
                    reducer=self.k_means_reducer),
         ]
 
+        # Add 98 normal MR jobs
+        for i in xrange(98):
+            jobs.append(
+                MRStep(mapper_init=self.before_mapper,
+                       mapper=self.k_means_mapper,
+                       reducer_init=self.before_reducer,
+                       reducer=self.k_means_reducer))
+
+        # Add the last job
+        jobs.append(
+            MRStep(mapper_init=self.before_mapper,
+                   mapper=self.k_means_mapper,
+                   reducer_init=self.before_reducer,
+                   reducer=self.final_reducer))
+
+        return jobs
+
 
     def first_step_init(self):
-        print "First Step Init"
         self.users = build_database()
         self.centroids = create_centroids(self.users)
 
 
     def before_mapper(self):
-        print "Before Mapper"
         self.users = open_database()
         self.centroids = read_centroids()
 
@@ -238,19 +251,18 @@ class MRMovielens(MRJob):
                 smallest_distance = distance
                 closest_centroid = centroid
 
-        print "%s is closest to %s" % (attributes, closest_centroid)
+        #print "%s is closest to %s" % (attributes, closest_centroid)
 
         # Take the closest one, and yield (centroid, user attributes) pair
         yield closest_centroid, (attributes, line)
 
 
     def before_reducer(self):
-        print "Before reducer"
         open('centroids.txt', 'w').close()
 
 
     def k_means_reducer(self, key, values):
-        print "Old centroid: %s" % key
+        #print "Old centroid: %s" % key
 
         # For a given key, we have a list of users that belong to that key
         # Average their locations to get a new centroid
@@ -270,12 +282,20 @@ class MRMovielens(MRJob):
         highest_rated_genre /= count
 
         new_centroid = (age, most_watched_genre, highest_rated_genre)
-        print "New centroid: %s" % list(new_centroid)
-        print "Count: %s" % count
+        #print "New centroid: %s" % list(new_centroid)
+        #print "Count: %s" % count
 
         # Save the new centroid
         with open('centroids.txt', 'a') as f:
             f.write("%s\n" % list(new_centroid))
+
+
+    def final_reducer(self, key, values):
+        print "Final centroid: %s with assigned users." % key
+        for value in values:
+            line = value[1]
+
+            yield key, line
 
 
 if __name__ == '__main__':
