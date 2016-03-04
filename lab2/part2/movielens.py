@@ -71,20 +71,10 @@ def get_genre_numbers(movie):
 # and the second is the sum of all the ratings in a particular genre.
 def build_ratings_dict():
     dictionary = dict()
-
     for i in xrange(18):
         dictionary[i] = [0, 0]
 
     return dictionary
-
-
-# Gives a list of k random numbers between 0 and upper_bound.
-def random_numbers(k, upper_bound=943):
-    numbers = list()
-    for i in xrange(k):
-        numbers.append(randint(0, upper_bound))
-
-    return numbers
 
 
 # Opens the database.txt file and returns it as a dict.
@@ -143,45 +133,26 @@ def build_database():
 # (age, most_watched_genre_number, highest_rated_genre_number).
 def get_attributes_for_user(user):
     age = user[0]
-
     genre_dict = user[1]
-
-    most_watched_genre = 0
-    most_watched_number = 0
-    highest_rated_genre = 0
-    highest_rated_number = 0.0
 
     average_comedy_rating = float(genre_dict[7][1]) / float(genre_dict[7][0]) if genre_dict[7][0] != 0 else 0
     avg_comedy_rating = int(average_comedy_rating)
 
-    for key, value in genre_dict.iteritems():
-        if key == 18: continue
-
-        watch_count = value[0]
-        rating_sum = value[1]
-        rating_avg = float(rating_sum) / float(watch_count) if watch_count != 0 else 0
-
-        if watch_count > most_watched_number:
-            most_watched_number = watch_count
-            most_watched_genre = key
-
-        if rating_avg > highest_rated_number:
-            highest_rated_number = rating_avg
-            highest_rated_genre = key
-
-    #return (int(age), map_genre_number(most_watched_genre), map_genre_number(highest_rated_genre))
     return (int(age), avg_comedy_rating)
 
 
-# Creates k new random centroids. Writes these to a file.
+# Creates k new random centroids. Writes these to k distinct files.
 def create_centroids(users, k=10):
     centroids = list()
 
     for i in xrange(k):
+        # Pick a random user ID and get that user's attributes for the centroid
         key = choice(users.keys())
         attributes = list(get_attributes_for_user(users[key]))
-        attributes.append(i)
-        centroids.append(attributes)
+        attributes.append(i) # Append the index so we know what number centroid it is later
+        centroids.append(attributes) # Add it to the list to return
+        
+        # Write to file
         filename = "centroid%s.txt" % i
         with open(filename, 'w') as f:
             f.write("%s\n" % attributes)
@@ -189,6 +160,7 @@ def create_centroids(users, k=10):
     return centroids
 
 
+# Reads all k centroid files and puts them into a list.
 def read_centroids(k=10):
     centroids = list()
 
@@ -228,16 +200,21 @@ class MRMovielens(MRJob):
         return jobs
 
 
+    # This is the mapper_init for the first Job.
+    # Builds the database and creates new centroids.
     def first_step_init(self):
         self.users = build_database()
         self.centroids = create_centroids(self.users)
 
 
+    # This is the mapper_init for a normal K-means iteration.
+    # Opens the user database and reads in all of the current centroids.
     def before_mapper(self):
         self.users = open_database()
         self.centroids = read_centroids()
 
 
+    # This is the mapper for a K-means iteration.
     def k_means_mapper(self, _, line):
         # Calculate the distance to each centroid
         smallest_distance = sys.maxint
@@ -249,41 +226,38 @@ class MRMovielens(MRJob):
 
         for centroid in self.centroids:
             age_diff = pow(centroid[0] - attributes[0], 2)
-            #most_watched_genre_diff = pow(centroid[1] - attributes[1], 2)
-            #highest_rated_genre_diff = pow(centroid[2] - attributes[2], 2)
-            comedy_diff = pow(centroid[1] - attributes[1], 2)
+            genre_diff = pow(centroid[1] - attributes[1], 2)
 
-            distance = math.sqrt((2*age_diff) + comedy_diff) #most_watched_genre_diff + highest_rated_genre_diff)
+            distance = math.sqrt((2*age_diff) + genre_diff)
 
             if distance < smallest_distance:
                 smallest_distance = distance
                 closest_centroid = centroid
 
-        # Take the closest one, and yield (centroid, user attributes) pair
+        # Take the closest one, and yield (centroid, (user attributes, input line)) pair
         yield closest_centroid, (attributes, line)
 
 
+    # This is the reducer for a K-means iteration.
     def k_means_reducer(self, key, values):
         # For a given key, we have a list of users that belong to that key
         # Average their locations to get a new centroid
-        count, age, comedy = 0, 0, 0 #most_watched_genre, highest_rated_genre = 0, 0, 0, 0
+        count, age, genre_rating = 0, 0, 0
         for value in values:
             attributes = value[0]
             line = value[1]
             count += 1
-            age += attributes[0]
-            #most_watched_genre += attributes[1]
-            #highest_rated_genre += attributes[2]
-            comedy += attributes[1]
 
+            age += attributes[0]
+            genre_rating += attributes[1]
+
+            # Yield this to the mappers so they can get the users line by line again
             yield None, line
 
         age /= count
-        #most_watched_genre /= count
-        #highest_rated_genre /= count
-        comedy /= count
+        genre_rating /= count
 
-        new_centroid = (age, comedy, key[2]) #most_watched_genre, highest_rated_genre, key[3])
+        new_centroid = (age, genre_rating, key[2])
 
         # Save the new centroid
         filename = "centroid%s.txt" % key[2]
@@ -292,12 +266,15 @@ class MRMovielens(MRJob):
 
 
     def final_reducer(self, key, values):
-        print "Final centroid: %s with assigned users." % key
+        count = 0
         for value in values:
+            attributes = value[0]
             line = value[1]
+            count += 1
 
             yield key, line
 
+        print "Total users under centroid %s: %s" % (key, count)
 
 if __name__ == '__main__':
     MRMovielens.run()
