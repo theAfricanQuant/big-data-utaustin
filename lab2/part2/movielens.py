@@ -93,7 +93,7 @@ def build_database():
 # (age, avg_rating_for_genre).
 # NOTE: It is easy to change which genre we care about. Simply change the genre_number parameter.
 # Genre numbers are located in ml-100k/u.genre
-def get_attributes_for_user(user, genre_number=18):
+def get_attributes_for_user(user, genre_number=1):
     age = user[0]
     genre_dict = user[1]
     genre_info = genre_dict[genre_number]
@@ -102,11 +102,11 @@ def get_attributes_for_user(user, genre_number=18):
     total_rating = genre_info[1]
     avg_genre_rating = float(total_rating) / float(watch_count) if watch_count != 0 else 0
 
-    return (int(age), int(avg_genre_rating))
+    return (int(age), avg_genre_rating)
 
 
 # Creates k new random centroids. Writes these to k distinct files.
-def create_centroids(users, k=15):
+def create_centroids(users, k=16):
     centroids = list()
 
     for i in xrange(k):
@@ -125,7 +125,7 @@ def create_centroids(users, k=15):
 
 
 # Reads all k centroid files and puts them into a list.
-def read_centroids(k=15):
+def read_centroids(k=16):
     centroids = list()
 
     for i in xrange(k):
@@ -192,7 +192,7 @@ class MRMovielens(MRJob):
             age_diff = pow(centroid[0] - attributes[0], 2)
             genre_diff = pow(centroid[1] - attributes[1], 2)
 
-            distance = math.sqrt((2*age_diff) + genre_diff)
+            distance = math.sqrt((3*age_diff) + genre_diff)
 
             if distance < smallest_distance:
                 smallest_distance = distance
@@ -213,13 +213,13 @@ class MRMovielens(MRJob):
             count += 1
 
             age += attributes[0]
-            genre_rating += attributes[1]
+            genre_rating += float(attributes[1])
 
             # Yield this to the mappers so they can get the users line by line again
             yield None, line
 
         age /= count
-        genre_rating /= count
+        genre_rating /= float(count)
 
         new_centroid = (age, genre_rating, key[2])
 

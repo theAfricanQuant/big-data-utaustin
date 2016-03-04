@@ -1,60 +1,64 @@
-Total users under centroid [12, 3, 5]: 11
-All ages represented: {10: 1, 11: 1, 13: 5, 14: 3, 7: 1}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [12, 3.926248912487445, 12]: 6
+All ages represented: {11: 1, 13: 5}
+On average, these users rated this genre 3.92624891249/5 stars.
 
-Total users under centroid [17, 3, 3]: 43
-All ages represented: {16: 5, 17: 14, 18: 18, 15: 6}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [14, 3.1715425531914896, 1]: 3
+All ages represented: {14: 3}
+On average, these users rated this genre 3.17154255319/5 stars.
 
-Total users under centroid [20, 3, 6]: 82
-All ages represented: {19: 23, 20: 32, 21: 27}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [15, 3.540079365079366, 4]: 6
+All ages represented: {15: 6}
+On average, these users rated this genre 3.54007936508/5 stars.
 
-Total users under centroid [22, 1, 11]: 4
-All ages represented: {22: 4}
-On average, these users rated this genre 1/5 stars.
+Total users under centroid [16, 3.496049973418395, 10]: 5
+All ages represented: {16: 5}
+On average, these users rated this genre 3.49604997342/5 stars.
 
-Total users under centroid [22, 3, 13]: 33
-All ages represented: {22: 33}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [17, 3.762561956688661, 7]: 24
+All ages represented: {17: 14, 18: 10}
+On average, these users rated this genre 3.76256195669/5 stars.
 
-Total users under centroid [24, 3, 8]: 99
+Total users under centroid [19, 3.847763688743601, 15]: 49
+All ages represented: {18: 8, 19: 23, 20: 18}
+On average, these users rated this genre 3.84776368874/5 stars.
+
+Total users under centroid [21, 3.6602820705425634, 11]: 78
+All ages represented: {20: 14, 21: 27, 22: 37}
+On average, these users rated this genre 3.66028207054/5 stars.
+
+Total users under centroid [24, 3.7569426013905045, 3]: 99
 All ages represented: {24: 33, 25: 38, 23: 28}
-On average, these users rated this genre 3/5 stars.
+On average, these users rated this genre 3.75694260139/5 stars.
 
-Total users under centroid [26, 2, 10]: 24
-All ages represented: {26: 24}
-On average, these users rated this genre 2/5 stars.
+Total users under centroid [27, 3.6957320373813434, 14]: 105
+All ages represented: {26: 34, 27: 35, 28: 36}
+On average, these users rated this genre 3.69573203738/5 stars.
 
-Total users under centroid [27, 3, 4]: 81
-All ages represented: {26: 10, 27: 35, 28: 36}
-On average, these users rated this genre 3/5 stars.
-
-Total users under centroid [30, 3, 0]: 124
+Total users under centroid [30, 3.640224454241718, 0]: 124
 All ages represented: {32: 28, 29: 32, 30: 39, 31: 25}
-On average, these users rated this genre 3/5 stars.
+On average, these users rated this genre 3.64022445424/5 stars.
 
-Total users under centroid [34, 3, 7]: 91
-All ages represented: {33: 26, 34: 17, 35: 27, 36: 21}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [35, 3.790424188240571, 9]: 119
+All ages represented: {33: 26, 34: 17, 35: 27, 36: 21, 37: 19, 38: 9}
+On average, these users rated this genre 3.79042418824/5 stars.
 
-Total users under centroid [38, 3, 14]: 79
-All ages represented: {40: 21, 37: 19, 38: 17, 39: 22}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [41, 3.6927411850407017, 2]: 118
+All ages represented: {38: 8, 39: 22, 40: 21, 41: 10, 42: 21, 43: 13, 44: 23}
+On average, these users rated this genre 3.69274118504/5 stars.
 
-Total users under centroid [43, 3, 1]: 82
-All ages represented: {41: 10, 42: 21, 43: 13, 44: 23, 45: 15}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [48, 3.789371825947617, 8]: 124
+All ages represented: {45: 15, 46: 12, 47: 14, 48: 20, 49: 19, 50: 20, 51: 20, 52: 4}
+On average, these users rated this genre 3.78937182595/5 stars.
 
-Total users under centroid [48, 3, 12]: 85
-All ages represented: {48: 20, 49: 19, 50: 20, 46: 12, 47: 14}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [56, 3.770027856181894, 5]: 62
+All ages represented: {52: 2, 53: 12, 54: 4, 55: 11, 56: 6, 57: 9, 58: 3, 59: 3, 60: 9, 61: 3}
+On average, these users rated this genre 3.77002785618/5 stars.
 
-Total users under centroid [53, 3, 2]: 71
-All ages represented: {51: 20, 52: 6, 53: 12, 54: 4, 55: 11, 56: 6, 57: 9, 58: 3}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [66, 3.725182421154793, 6]: 19
+All ages represented: {64: 2, 65: 3, 66: 1, 68: 2, 69: 2, 70: 3, 73: 1, 62: 2, 63: 3}
+On average, these users rated this genre 3.72518242115/5 stars.
 
-Total users under centroid [63, 3, 9]: 34
-All ages represented: {64: 2, 65: 3, 66: 1, 68: 2, 69: 2, 70: 3, 73: 1, 59: 3, 60: 9, 61: 3, 62: 2, 63: 3}
-On average, these users rated this genre 3/5 stars.
+Total users under centroid [8, 3.625, 13]: 2
+All ages represented: {10: 1, 7: 1}
+On average, these users rated this genre 3.625/5 stars.
 
