@@ -1,3 +1,5 @@
+# NOTES:
+
 from mrjob.job import MRJob
 from mrjob.step import MRStep
 
@@ -13,7 +15,7 @@ def get_genre_numbers(movie):
     start_index = 5 # Movie genres start at index 5
 
     # There are 18 genres
-    for i in xrange(18):
+    for i in xrange(19):
         index = i + start_index
 
         # If the movie is in this genre, add the number to the list
@@ -29,7 +31,7 @@ def get_genre_numbers(movie):
 # and the second is the sum of all the ratings in a particular genre.
 def build_ratings_dict():
     dictionary = dict()
-    for i in xrange(18):
+    for i in xrange(19):
         dictionary[i] = [0, 0]
 
     return dictionary
@@ -88,19 +90,23 @@ def build_database():
 
 
 # Returns a tuple of attributes for a selected user. This tuple is
-# (age, most_watched_genre_number, highest_rated_genre_number).
-def get_attributes_for_user(user):
+# (age, avg_rating_for_genre).
+# NOTE: It is easy to change which genre we care about. Simply change the genre_number parameter.
+# Genre numbers are located in ml-100k/u.genre
+def get_attributes_for_user(user, genre_number=18):
     age = user[0]
     genre_dict = user[1]
+    genre_info = genre_dict[genre_number]
 
-    average_comedy_rating = float(genre_dict[7][1]) / float(genre_dict[7][0]) if genre_dict[7][0] != 0 else 0
-    avg_comedy_rating = int(average_comedy_rating)
+    watch_count = genre_info[0]
+    total_rating = genre_info[1]
+    avg_genre_rating = float(total_rating) / float(watch_count) if watch_count != 0 else 0
 
-    return (int(age), avg_comedy_rating)
+    return (int(age), int(avg_genre_rating))
 
 
 # Creates k new random centroids. Writes these to k distinct files.
-def create_centroids(users, k=10):
+def create_centroids(users, k=15):
     centroids = list()
 
     for i in xrange(k):
@@ -119,7 +125,7 @@ def create_centroids(users, k=10):
 
 
 # Reads all k centroid files and puts them into a list.
-def read_centroids(k=10):
+def read_centroids(k=15):
     centroids = list()
 
     for i in xrange(k):
@@ -225,14 +231,20 @@ class MRMovielens(MRJob):
 
     def final_reducer(self, key, values):
         count = 0
+        agedict = dict()
         for value in values:
             attributes = value[0]
             line = value[1]
             count += 1
 
-            yield key, line
+            if attributes[0] in agedict:
+                agedict[attributes[0]] += 1
+            else:
+                agedict[attributes[0]] = 1
 
         print "Total users under centroid %s: %s" % (key, count)
+        print "All ages represented: %s" % agedict
+        print "On average, these users rated this genre %s/5 stars.\n" % key[1]
 
 if __name__ == '__main__':
     MRMovielens.run()
