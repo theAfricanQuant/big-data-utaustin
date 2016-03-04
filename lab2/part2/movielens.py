@@ -168,26 +168,31 @@ def get_attributes_for_user(user):
     return (int(age), map_genre_number(most_watched_genre), map_genre_number(highest_rated_genre))
 
 
-# Creates new random centroids. Writes these to a file.
-def create_centroids(users):
+# Creates k new random centroids. Writes these to a file.
+def create_centroids(users, k=3):
     centroids = list()
 
-    with open('centroids.txt', 'w') as f:
-        for i in xrange(10):
-            key = choice(users.keys())
-            attributes = get_attributes_for_user(users[key])
-            centroids.append(list(attributes))
-            f.write("%s\n" % list(attributes))
+    for i in xrange(k):
+        key = choice(users.keys())
+        attributes = list(get_attributes_for_user(users[key]))
+        attributes.append(i)
+        centroids.append(attributes)
+        filename = "centroid%s.txt" % i
+        with open(filename, 'w') as f:
+            f.write("%s\n" % attributes)
 
     return centroids
 
 
-def read_centroids():
+def read_centroids(k=3):
     centroids = list()
-    with open('centroids.txt', 'r') as f:
-        for line in f:
-            attributes = eval(line)
-            centroids.append(attributes)
+
+    for i in xrange(k):
+        filename = "centroid%s.txt" % i
+        with open(filename, 'r') as f:
+            for line in f:
+                attributes = eval(line)
+                centroids.append(attributes)
 
     return centroids
 
@@ -199,23 +204,23 @@ class MRMovielens(MRJob):
         jobs = [
             MRStep(mapper_init=self.first_step_init,
                    mapper=self.k_means_mapper,
-                   reducer_init=self.before_reducer,
+                   #reducer_init=self.before_reducer,
                    reducer=self.k_means_reducer),
         ]
 
         # Add 98 normal MR jobs
-        for i in xrange(98):
+        for i in xrange(49):
             jobs.append(
                 MRStep(mapper_init=self.before_mapper,
                        mapper=self.k_means_mapper,
-                       reducer_init=self.before_reducer,
+                       #reducer_init=self.before_reducer,
                        reducer=self.k_means_reducer))
 
         # Add the last job
         jobs.append(
             MRStep(mapper_init=self.before_mapper,
                    mapper=self.k_means_mapper,
-                   reducer_init=self.before_reducer,
+                   #reducer_init=self.before_reducer,
                    reducer=self.final_reducer))
 
         return jobs
@@ -257,13 +262,7 @@ class MRMovielens(MRJob):
         yield closest_centroid, (attributes, line)
 
 
-    def before_reducer(self):
-        open('centroids.txt', 'w').close()
-
-
     def k_means_reducer(self, key, values):
-        #print "Old centroid: %s" % key
-
         # For a given key, we have a list of users that belong to that key
         # Average their locations to get a new centroid
         count, age, most_watched_genre, highest_rated_genre = 0, 0, 0, 0
@@ -281,12 +280,11 @@ class MRMovielens(MRJob):
         most_watched_genre /= count
         highest_rated_genre /= count
 
-        new_centroid = (age, most_watched_genre, highest_rated_genre)
-        #print "New centroid: %s" % list(new_centroid)
-        #print "Count: %s" % count
+        new_centroid = (age, most_watched_genre, highest_rated_genre, key[3])
 
         # Save the new centroid
-        with open('centroids.txt', 'a') as f:
+        filename = "centroid%s.txt" % key[3]
+        with open(filename, 'w') as f:
             f.write("%s\n" % list(new_centroid))
 
 
