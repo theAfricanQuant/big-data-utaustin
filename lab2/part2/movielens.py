@@ -1,4 +1,16 @@
-# NOTES:
+'''
+Notes:
+    In order to run this, you must use the following command:
+        python movielens.py ml-100k/u.user --file ml-100k/u.data --file ml-100k/u.item --file ml-100k/u.user --file database.txt --file centroid1.txt --file centroid2.txt --file centroid0.txt --file centroid3.txt --file centroid4.txt --file centroid5.txt --file centroid6.txt --file centroid7.txt --file centroid8.txt --file centroid9.txt --file centroid10.txt --file centroid11.txt --file centroid12.txt --file centroid13.txt --file centroid14.txt --file centroid15.txt > OUTFILE
+    
+    This is beacuse each centroid is saved in it's own file, and we have a K value of 16 (so 16 centroid files).
+    These files should be created for you when ran, but if it does not work, then 'touch' all of these files
+        to create them before running.
+    The only files that must already exist are: ml-100k/u.user | ml-100k/u.data | ml-100k/u.item
+
+    To change which genre is analyzed, edit the analyze_genre_number variable on line 25.
+    In order to see genre numbers, look at the ml-100k/u.genre file.
+'''
 
 from mrjob.job import MRJob
 from mrjob.step import MRStep
@@ -8,8 +20,12 @@ import math
 
 from random import randint, choice
 
-# Given an input line from a movie item, this will return a list of
-# numbers that correspond to the genres that the movie item belongs to.
+# Used to determine which genre we want to look at.
+# Genre numbers are labeled in ml-100k/u.genre
+analyze_genre_number = 1
+
+# Given an input line from a movie item (u.item), this will return a list of
+# numbers that are the genre numbers that the movie belongs to.
 def get_genre_numbers(movie):
     genres = list()
     start_index = 5 # Movie genres start at index 5
@@ -66,7 +82,7 @@ def build_database():
             fields = line.split("|")
             movies[fields[0]] = get_genre_numbers(fields)
        
-    # Goes line by line and fills updates user ratings dicts accordingly
+    # Goes line by line and fills in user ratings dicts accordingly
     with open('u.data', 'r') as data_file:
         for line in data_file:
             fields = line.split()
@@ -84,16 +100,13 @@ def build_database():
                 current[0] += 1 # count
                 current[1] += int(fields[2]) # sum of ratings
     
-    # Finally write this to the database file so we can use it later
+    # Finally write this to the database.txt file so we can use it later
     write_to_file(users)
     return users
 
 
-# Returns a tuple of attributes for a selected user. This tuple is
-# (age, avg_rating_for_genre).
-# NOTE: It is easy to change which genre we care about. Simply change the genre_number parameter.
-# Genre numbers are located in ml-100k/u.genre
-def get_attributes_for_user(user, genre_number=1):
+# Returns a tuple of attributes for a selected user. This tuple is (age, avg_rating_for_genre).
+def get_attributes_for_user(user, genre_number=analyze_genre_number):
     age = user[0]
     genre_dict = user[1]
     genre_info = genre_dict[genre_number]
@@ -229,6 +242,7 @@ class MRMovielens(MRJob):
             f.write("%s\n" % list(new_centroid))
 
 
+    # This is the final reducer. It prints out the values that we care about before terminating.
     def final_reducer(self, key, values):
         count = 0
         agedict = dict()
@@ -245,6 +259,7 @@ class MRMovielens(MRJob):
         print "Total users under centroid %s: %s" % (key, count)
         print "All ages represented: %s" % agedict
         print "On average, these users rated this genre %s/5 stars.\n" % key[1]
+
 
 if __name__ == '__main__':
     MRMovielens.run()
