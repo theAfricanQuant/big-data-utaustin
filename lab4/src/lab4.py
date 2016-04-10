@@ -7,18 +7,18 @@ from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.tree import DecisionTree, DecisionTreeModel
 from pyspark.mllib.util import MLUtils
 
-# Read in the data
-# First the prediction data
-data = pd.read_csv("../dataset/arcene_train.data", sep=' ', header=None)
-data.drop(data.columns[[10000]], axis=1, inplace=True)
+def read_train_data():
+    # First the prediction data
+    data = pd.read_csv("../dataset/arcene_train.data", sep=' ', header=None)
+    data.drop(data.columns[[10000]], axis=1, inplace=True)
 
-# Then the labels associated with them
-# Replace the class -1 with class 0 for MLLib to use
-labels = pd.read_csv("../dataset/arcene_train.labels", header=None, names=["class"])
-labels.replace(-1.0, 0.0, inplace=True)
+    # Then the labels associated with them
+    # Replace the class -1 with class 0 for MLLib to use
+    labels = pd.read_csv("../dataset/arcene_train.labels", header=None, names=["class"])
+    labels.replace(-1.0, 0.0, inplace=True)
 
-# Combine the two into one dataframe
-combined = pd.concat([labels, data], axis=1)
+    # Combine the two into one dataframe
+    return pd.concat([labels, data], axis=1)
 
 def fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=32, maxDepth=5):
     # Fit the model
@@ -32,13 +32,15 @@ def fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=32, ma
     #print('Learned classification tree model:')
     #print(model.toDebugString())
 
+##### START HERE #####
 # Initalize Spark context
 sc = SparkContext(appName="Lab4")
 sc.setLogLevel("ERROR")
 
 # Convert our Pandas dataframe to a Spark dataframe
+training_data = read_train_data()
 sql_context = SQLContext(sc)
-df = sql_context.createDataFrame(combined)
+df = sql_context.createDataFrame(training_data)
 
 # Convert Spark dataframe to LabeledPoint RDD
 temp = df.map(lambda line:LabeledPoint(line[0],[line[1:]]))
