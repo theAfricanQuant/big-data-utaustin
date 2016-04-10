@@ -20,8 +20,17 @@ labels.replace(-1.0, 0.0, inplace=True)
 # Combine the two into one dataframe
 combined = pd.concat([labels, data], axis=1)
 
-#print(combined.shape)
-#print(combined.head())
+def fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=32, maxDepth=5):
+    # Fit the model
+    model = DecisionTree.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={}, impurity=impurity, maxBins=maxBins, maxDepth=maxDepth)
+
+    # Make predictions on validation set and get error
+    predictions = model.predict(validation_data.map(lambda x: x.features))
+    labelsAndPredictions = validation_data.map(lambda lp: lp.label).zip(predictions)
+    testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(validation_data.count())
+    print('Error = ' + str(testErr))
+    #print('Learned classification tree model:')
+    #print(model.toDebugString())
 
 # Initalize Spark context
 sc = SparkContext(appName="Lab4")
@@ -37,14 +46,26 @@ temp = df.map(lambda line:LabeledPoint(line[0],[line[1:]]))
 # Split into train and validation
 (train, validation) = temp.randomSplit([0.7, 0.3], seed=42)
 
-# Fit the model
-model = DecisionTree.trainClassifier(train, numClasses=2, categoricalFeaturesInfo={}, impurity='gini', maxBins=32)
+# Fit the model - gini
+print('Gini impurity classifier')
+fitDecisionTree(train, validation, impurity='gini', maxBins=32)
 
-# Make predictions on validation set and get error
-predictions = model.predict(validation.map(lambda x: x.features))
-labelsAndPredictions = validation.map(lambda lp: lp.label).zip(predictions)
-testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(validation.count())
-print('Test Error = ' + str(testErr))
-print('Learned classification tree model:')
-print(model.toDebugString())
+# Model with entropy
+print('Entropy impurity classifier')
+fitDecisionTree(train, validation, impurity='entropy', maxBins=32)
 
+# Vary number of bins
+bins = [2, 6, 10, 14, 18, 22, 26, 30, 34, 38]
+for b in bins:
+    print('accuracy for maxBins=%s' % (b))
+    fitDecisionTree(train, validation, maxBins=b)
+
+# TODO plot
+
+# Vary maxDepth
+depth = [1, 2, 3, 4, 5]
+for d in depth:
+    print('accuracy for maxDepth=%s' % (d))
+    fitDecisionTree(train, validation, maxDepth=d)
+
+# TODO plot
