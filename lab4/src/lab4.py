@@ -2,6 +2,8 @@ import pandas as pd
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
+from time import time
+
 from pyspark import SparkContext
 from pyspark.sql import SQLContext
 
@@ -90,23 +92,35 @@ def decisionTreeVaryDepth(train_data, validation_data):
     makePlot(depth, accuracy, 'maxDepth', 'accuracy')
 
 
-
+# Fits a RandomForest model using numTrees number of trees.
 def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxBins=32, maxDepth=5):
+    t0 = time()
     model = RandomForest.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},
                                          numTrees=numTrees, featureSubsetStrategy="auto",
                                          impurity=impurity, maxDepth=maxDepth, maxBins=maxBins)
-    
+    tt = time() - t0
+
     predictions = model.predict(validation_data.map(lambda x: x.features))
     labelsAndPredictions = validation_data.map(lambda lp: lp.label).zip(predictions)
     testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(validation_data.count())
 
     accuracy = 1.0 - testErr
     print('Accuracy = ' + str(accuracy))
-    print('Learned classification forest model:')
-    print(model.toDebugString())
+    #print('Learned classification forest model:')
+    #print(model.toDebugString())
 
-    return accuracy
+    return (accuracy, tt)
 
+
+# Trains multiple Random Forest models, varying the number of trees.
+def randomForestVaryTrees(train_data, validation_data, maxNumTrees=5):
+    accuracy = []
+    for i in range(1, maxNumTrees+1):
+        print('numTrees=%s' % (i))
+        result, time = fitRandomForest(train_data, validation_data, i)
+        accuracy.append(result)
+
+    makePlot(range(1, maxNumTrees+1), accuracy, 'numTrees', 'accuracy')
 
 ##### START HERE #####
 # Initalize Spark context
@@ -142,5 +156,16 @@ print('Final Decision Tree model, ran on split data and tested on validation')
 print('Final Decision Tree trained on all test data and tested on test dataset')
 #fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=26, maxDepth=3)
 
-print('RF')
-fitRandomForest(train, validation, 10)
+print('Random Forest models, by varying the number of trees')
+#randomForestVaryTrees(train, validation)
+
+print('Random Forest with most trees I can train, to be examined as a function of N (cores)')
+#accuracy, time = fitRandomForest(train, validation, 5)
+print('Time taken to train = %s (seconds)' % (time))
+
+print('Final Random Forest model, ran on split data and tested on validation')
+#fitRandomForest(train, validation, 10, impurity='gini', maxBins=26, maxDepth=5)
+
+print('Final Random Forest model, ran on all test data and tested on test dataset')
+#fitRandomForest(allTrain, allTest, 10, impurity='gini', maxBins=26, maxDepth=5)
+
