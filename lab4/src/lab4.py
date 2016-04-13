@@ -7,6 +7,7 @@ from pyspark.sql import SQLContext
 
 from pyspark.mllib.regression import LabeledPoint
 from pyspark.mllib.tree import DecisionTree, DecisionTreeModel
+from pyspark.mllib.tree import RandomForest, RandomForestModel
 from pyspark.mllib.util import MLUtils
 
 # Reads in the arcene dataset.
@@ -41,10 +42,9 @@ def convertToLabeledPoint(sc, dataframe):
 
 # Fits a Decision Tree using the training data and measures error against the validation data.
 def fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=32, maxDepth=5):
-    # Fit the model
-    model = DecisionTree.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={}, impurity=impurity, maxBins=maxBins, maxDepth=maxDepth)
+    model = DecisionTree.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},
+                                         impurity=impurity, maxBins=maxBins, maxDepth=maxDepth)
 
-    # Make predictions on validation set and get error
     predictions = model.predict(validation_data.map(lambda x: x.features))
     labelsAndPredictions = validation_data.map(lambda lp: lp.label).zip(predictions)
     testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(validation_data.count())
@@ -90,6 +90,24 @@ def decisionTreeVaryDepth(train_data, validation_data):
     makePlot(depth, accuracy, 'maxDepth', 'accuracy')
 
 
+
+def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxBins=32, maxDepth=5):
+    model = RandomForest.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},
+                                         numTrees=numTrees, featureSubsetStrategy="auto",
+                                         impurity=impurity, maxDepth=maxDepth, maxBins=maxBins)
+    
+    predictions = model.predict(validation_data.map(lambda x: x.features))
+    labelsAndPredictions = validation_data.map(lambda lp: lp.label).zip(predictions)
+    testErr = labelsAndPredictions.filter(lambda (v, p): v != p).count() / float(validation_data.count())
+
+    accuracy = 1.0 - testErr
+    print('Accuracy = ' + str(accuracy))
+    print('Learned classification forest model:')
+    print(model.toDebugString())
+
+    return accuracy
+
+
 ##### START HERE #####
 # Initalize Spark context
 sc = SparkContext(appName="Lab4")
@@ -124,4 +142,5 @@ print('Final Decision Tree model, ran on split data and tested on validation')
 print('Final Decision Tree trained on all test data and tested on test dataset')
 #fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=26, maxDepth=3)
 
-
+print('RF')
+fitRandomForest(train, validation, 10)
