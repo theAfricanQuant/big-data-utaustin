@@ -112,16 +112,21 @@ def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxB
     return (accuracy, tt)
 
 
-# Trains multiple Random Forest models, varying the number of trees.
+# Trains multiple Random Forest models, varying the number of trees in intervals of 100.
+# maxNumTrees will be multiped by 100. For example, with maxNumTrees=5, this will
+# train 5 trees of size 100, 200, 300, 400, and 500.
 def randomForestVaryTrees(train_data, validation_data, maxNumTrees=5):
+    trees = []
     accuracy = []
     for i in range(1, maxNumTrees+1):
-        print('numTrees=%s' % (i*10))
-        result, time = fitRandomForest(train_data, validation_data, i*10)
-        print('time to train= %s' % (time))
+        numTrees = i*100
+        print('numTrees=%s' % numTrees)
+        result, time = fitRandomForest(train_data, validation_data, numTrees)
+        print('time to train = %s' % (time))
+        trees.append(numTrees)
         accuracy.append(result)
 
-    makePlot(range(1, maxNumTrees+1), accuracy, 'numTrees', 'accuracy')
+    makePlot(trees, accuracy, 'numTrees', 'accuracy')
 
 ##### START HERE #####
 # Initalize Spark context
@@ -140,33 +145,33 @@ allTest = convertToLabeledPoint(sc, testing_data)
 
 # Start training Decision Trees!
 print('Decision Tree using gini impurity')
-#fitDecisionTree(train, validation, impurity='gini', maxBins=32)
+fitDecisionTree(train, validation, impurity='gini', maxBins=32)
 
 print('Decision Tree using entropy impurity')
-#fitDecisionTree(train, validation, impurity='entropy', maxBins=32)
+fitDecisionTree(train, validation, impurity='entropy', maxBins=32)
 
 print('Decision Trees keeping impurity as gini, but varying the number of bins')
-#decisionTreeVaryBins(train, validation)
+decisionTreeVaryBins(train, validation)
 
 print('Decision Trees keeping impurity as gini, maxBins as 14, but varying maxDepth')
-#decisionTreeVaryDepth(train, validation)
+decisionTreeVaryDepth(train, validation)
 
 print('Final Decision Tree model, ran on split data and tested on validation')
-#fitDecisionTree(train, validation, impurity='gini', maxBins=14, maxDepth=5)
+fitDecisionTree(train, validation, impurity='gini', maxBins=14, maxDepth=5)
 
-print('Final Decision Tree trained on all test data and tested on test dataset')
-#fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=14, maxDepth=5)
+print('Final Decision Tree trained on all training data and tested on test dataset')
+fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=14, maxDepth=5)
 
 print('Random Forest models, by varying the number of trees')
-randomForestVaryTrees(train, validation, maxNumTrees=20)
+randomForestVaryTrees(train, validation, maxNumTrees=40)
 
 print('Random Forest with most trees I can train, to be examined as a function of N (cores)')
-#accuracy, time = fitRandomForest(train, validation, 5)
+accuracy, time = fitRandomForest(train, validation, 4000)
 print('Time taken to train = %s (seconds)' % (time))
 
 print('Final Random Forest model, ran on split data and tested on validation')
-#fitRandomForest(train, validation, 10, impurity='gini', maxBins=26, maxDepth=5)
+fitRandomForest(train, validation, 2400, impurity='gini', maxBins=14, maxDepth=5)
 
-print('Final Random Forest model, ran on all test data and tested on test dataset')
-#fitRandomForest(allTrain, allTest, 10, impurity='gini', maxBins=26, maxDepth=5)
+print('Final Random Forest model, ran on all training data and tested on test dataset')
+fitRandomForest(allTrain, allTest, 2400, impurity='gini', maxBins=14, maxDepth=5)
 
