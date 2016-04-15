@@ -45,7 +45,7 @@ def convertToLabeledPoint(sc, dataframe):
 # Fits a Decision Tree using the training data and measures error against the validation data.
 def fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=32, maxDepth=5):
     model = DecisionTree.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},
-                                         impurity=impurity, maxBins=maxBins, maxDepth=maxDepth)
+                                         impurity=impurity, maxBins=maxBins, maxDepth=maxDepth, minInfoGain=0.05)
 
     predictions = model.predict(validation_data.map(lambda x: x.features))
     labelsAndPredictions = validation_data.map(lambda lp: lp.label).zip(predictions)
@@ -80,20 +80,20 @@ def decisionTreeVaryBins(train_data, validation_data):
 
 
 # Fits 5 decision trees, varying the max depth allowed.
-# maxBins is fixed to 26, because that is the best one we saw from varying the bins.
+# maxBins is fixed to 14, because that is the best one we saw from varying the bins.
 def decisionTreeVaryDepth(train_data, validation_data):
     depth = [1, 2, 3, 4, 5]
     accuracy = []
     for d in depth:
         print('maxDepth=%s' % (d))
-        result = fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=26, maxDepth=d)
+        result = fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=14, maxDepth=d)
         accuracy.append(result)
 
     makePlot(depth, accuracy, 'maxDepth', 'accuracy')
 
 
 # Fits a RandomForest model using numTrees number of trees.
-def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxBins=32, maxDepth=5):
+def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxBins=14, maxDepth=5):
     t0 = time()
     model = RandomForest.trainClassifier(train_data, numClasses=2, categoricalFeaturesInfo={},
                                          numTrees=numTrees, featureSubsetStrategy="auto",
@@ -116,8 +116,9 @@ def fitRandomForest(train_data, validation_data, numTrees, impurity='gini', maxB
 def randomForestVaryTrees(train_data, validation_data, maxNumTrees=5):
     accuracy = []
     for i in range(1, maxNumTrees+1):
-        print('numTrees=%s' % (i))
-        result, time = fitRandomForest(train_data, validation_data, i)
+        print('numTrees=%s' % (i*10))
+        result, time = fitRandomForest(train_data, validation_data, i*10)
+        print('time to train= %s' % (time))
         accuracy.append(result)
 
     makePlot(range(1, maxNumTrees+1), accuracy, 'numTrees', 'accuracy')
@@ -147,17 +148,17 @@ print('Decision Tree using entropy impurity')
 print('Decision Trees keeping impurity as gini, but varying the number of bins')
 #decisionTreeVaryBins(train, validation)
 
-print('Decision Trees keeping impurity as gini, maxBins as 26, but varying maxDepth')
+print('Decision Trees keeping impurity as gini, maxBins as 14, but varying maxDepth')
 #decisionTreeVaryDepth(train, validation)
 
 print('Final Decision Tree model, ran on split data and tested on validation')
-#fitDecisionTree(train, validation, impurity='gini', maxBins=26, maxDepth=3)
+#fitDecisionTree(train, validation, impurity='gini', maxBins=14, maxDepth=5)
 
 print('Final Decision Tree trained on all test data and tested on test dataset')
-#fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=26, maxDepth=3)
+#fitDecisionTree(allTrain, allTest, impurity='gini', maxBins=14, maxDepth=5)
 
 print('Random Forest models, by varying the number of trees')
-#randomForestVaryTrees(train, validation)
+randomForestVaryTrees(train, validation, maxNumTrees=20)
 
 print('Random Forest with most trees I can train, to be examined as a function of N (cores)')
 #accuracy, time = fitRandomForest(train, validation, 5)
