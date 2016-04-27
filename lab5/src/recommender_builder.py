@@ -1,10 +1,11 @@
+import os
+import shutil
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from pyspark import SparkContext
-
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
-
 
 def read_ratings_data(sc):
     ''' Reads in the MovieLens rating data from the file
@@ -24,23 +25,30 @@ def makePlot(x, y, xlabel, ylabel):
 
 
 def set_up_als():
-    ''' Sets up MLLib ALS for training. This function was made
-    in case we need to do more setup in the future. '''
+    ''' Sets up MLLib ALS for training. '''
+    if os.path.exists('target/'):
+        shutil.rmtree('target/')
+    
     ALS.checkpointInterval = 2
 
 
-def run_als(train, validation, rank=10, iterations=7):
+def run_als(train, validation, rank=10, iterations=7, l=0.01, save_model=False, sc=None):
     ''' Trains an ALS on train and reports the accuracy on validation. '''
-    model = ALS.train(train, rank, iterations)
+    model = ALS.train(train, rank, iterations, lambda_=l)
+    
+    if save_model and sc is not None:
+        model.save(sc, 'target/recommender')
 
     # Evaluate model
-    testData = validation.map(lambda d: (d[0], d[1]))
-    predictions = model.predictAll(testData).map(lambda r: ((r[0], r[1]), r[2]))
-    origAndPreds = validation.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
-    correct = origAndPreds.map(lambda r: (1 if (abs(r[1][0] - r[1][1]) <= 1.0) else 0))
-    accuracy = correct.mean()
-    
-    return accuracy
+    if validation is not None:
+        testData = validation.map(lambda d: (d[0], d[1]))
+        predictions = model.predictAll(testData).map(lambda r: ((r[0], r[1]), r[2]))
+        origAndPreds = validation.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
+        correct = origAndPreds.map(lambda r: (1 if (abs(r[1][0] - r[1][1]) <= 1.0) else 0))
+        accuracy = correct.mean()
+        return accuracy
+
+    return None
 
 
 def als_vary_iterations(train, validation):
@@ -86,4 +94,11 @@ als_vary_iterations(ratings_train, ratings_validation)
 
 print('Training the model by varying the rank.')
 als_vary_rank(ratings_train, ratings_validation)
+
+print('Training the model with the best parameters.')
+accuracy = run_als(ratings_train, ratings_validation, rank=5, iterations=7, l=0.1)
+print('Validation set accuracy: %s' % (accuracy))
+
+print('Training the model on all data and saving it.')
+run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
 
