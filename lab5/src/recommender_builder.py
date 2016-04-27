@@ -1,3 +1,6 @@
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
 from pyspark import SparkContext
 
 from pyspark.mllib.recommendation import ALS, MatrixFactorizationModel, Rating
@@ -10,6 +13,14 @@ def read_ratings_data(sc):
     ratings = data.map(lambda l: l.split()).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
 
     return ratings
+
+
+def makePlot(x, y, xlabel, ylabel):
+    ''' Plots x and y and displays it to the user. '''
+    plt.scatter(x, y, color='black')
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.show()
 
 
 def set_up_als():
@@ -40,8 +51,7 @@ def als_vary_iterations(train, validation):
         accuracy = run_als(train, validation, iterations=i)
         accuracies.append(accuracy)
 
-    # TODO plot
-    print(accuracies)
+    makePlot(iterations, accuracies, 'numIterations', 'accuracy')
 
 
 def als_vary_rank(train, validation):
@@ -52,8 +62,7 @@ def als_vary_rank(train, validation):
         accuracy = run_als(train, validation, rank=r)
         accuracies.append(accuracy)
 
-    # TODO plot
-    print(accuracies)
+    makePlot(rank, accuracies, 'rank', 'accuracy')
 
 
 ### START HERE ###
