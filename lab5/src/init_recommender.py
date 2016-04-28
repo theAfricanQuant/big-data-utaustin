@@ -1,6 +1,8 @@
 import random
 
 def get_random_movies():
+    ''' Finds 10 random movies in the MovieLens dataset and returns them
+    as a list of (movie_id, movie_title). '''
     all_movies = []
 
     with open('../../lab2/part2/ml-100k/u.item') as f:
@@ -20,6 +22,8 @@ def get_random_movies():
 
 
 def get_input_for_prompt(prompt):
+    ''' Gets an integer input by displaying prompt to the
+    user and waiting for input. '''
     while True:
         value = raw_input('%s: ' % prompt)
         try:
@@ -31,6 +35,9 @@ def get_input_for_prompt(prompt):
 
 
 def rate_movies(movies):
+    ''' Asks the user to rate all the movies in the input
+    movies list. Returns a list of (movie_id, user_rating)
+    for all of the movies. '''
     ratings = []
 
     print('Please rate the following 10 movies from 1 to 5.')
@@ -46,8 +53,16 @@ def rate_movies(movies):
     return ratings
 
 
+def save_personal_ratings(ratings):
+    ''' Saves the movie ratings in a file called
+    personal_ratings.txt. '''
+    with open('target/personal_ratings.txt', 'w') as f:
+        for rating in ratings:
+            f.write('%s %s\n' % (rating[0], rating[1]))
+
+
 ### START HERE ###
 movies = get_random_movies()
 ratings = rate_movies(movies)
-print(ratings)
+save_personal_ratings(ratings)
 
