@@ -1,3 +1,4 @@
+import sys
 import os
 import shutil
 
@@ -16,6 +17,37 @@ def read_ratings_data(sc):
     return ratings
 
 
+def load_personal_ratings(sc):
+    data = sc.textFile('target/personal_ratings.txt')
+    ratings = data.map(lambda l: l.split()).map(lambda l: Rating(0, int(l[0]), float(l[1])))
+
+    return ratings
+
+
+def load_movies_dict():
+    all_movies = dict()
+
+    with open('../../lab2/part2/ml-100k/u.item') as f:
+        for line in f:
+            info = line.split('|')
+            movie_id = int(info[0])
+            movie_title = info[1]
+            
+            all_movies[movie_id] = movie_title
+
+    return all_movies
+
+
+def titles_for_ids(ids):
+    movies = load_movies_dict()
+    titles = []
+
+    for i in ids:
+        titles.append(movies[i])
+
+    return titles
+
+
 def makePlot(x, y, xlabel, ylabel):
     ''' Plots x and y and displays it to the user. '''
     plt.scatter(x, y, color='black')
@@ -26,10 +58,28 @@ def makePlot(x, y, xlabel, ylabel):
 
 def set_up_als():
     ''' Sets up MLLib ALS for training. '''
-    if os.path.exists('target/'):
-        shutil.rmtree('target/')
+    if os.path.exists('target/recommender'):
+        shutil.rmtree('target/recommender')
     
     ALS.checkpointInterval = 2
+
+
+def use_personal_ratings():
+    if len(sys.argv) >= 2:
+        if len(sys.argv) == 2 and sys.argv[1] == '-r':
+            return True
+        else:
+            print('Usage: /spark-submit --master local[x] run_recommender.py <-r>')
+            sys.exit(1)
+
+    return False
+
+
+def show_movie_titles(titles):
+    print('Here are your top movie recommendations:')
+    for i, title in enumerate(titles):
+        num = i + 1
+        print('%s. %s' % (num, title))
 
 
 def run_als(train, validation, rank=10, iterations=7, l=0.01, save_model=False, sc=None):
@@ -79,8 +129,13 @@ sc = SparkContext(appName="Lab5")
 sc.setLogLevel("ERROR")
 sc.setCheckpointDir('checkpoint/')
 
-# Read in ratings data
-ratings = read_ratings_data(sc)
+# Check how we are running
+if use_personal_ratings():
+    print('Recommending movies to you based on results from init_recommender')
+    personal_ratings = load_personal_ratings(sc)
+    ratings = read_ratings_data(sc).union(personal_ratings)
+else:
+    ratings = read_ratings_data(sc)
 
 # Split into train and test
 (ratings_train, ratings_validation) = ratings.randomSplit([0.7, 0.3], seed=42)
@@ -88,17 +143,30 @@ ratings = read_ratings_data(sc)
 # Do any setup required
 set_up_als()
 
+# Don't want to train all the various models if we're recommending, only the best one
+if use_personal_ratings():
+    run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
+    model = MatrixFactorizationModel.load(sc, 'target/recommender')
+
+    movies = model.recommendProducts(0, 10)
+    movie_ids = [m[1] for m in movies]    
+    titles = titles_for_ids(movie_ids)
+
+    show_movie_titles(titles)
+
+    sys.exit(0)
+
 # Train recommenders
 print('Training the model by varying the number of iterations.')
-als_vary_iterations(ratings_train, ratings_validation)
+#als_vary_iterations(ratings_train, ratings_validation)
 
 print('Training the model by varying the rank.')
-als_vary_rank(ratings_train, ratings_validation)
+#als_vary_rank(ratings_train, ratings_validation)
 
 print('Training the model with the best parameters.')
 accuracy = run_als(ratings_train, ratings_validation, rank=5, iterations=7, l=0.1)
 print('Validation set accuracy: %s' % (accuracy))
 
 print('Training the model on all data and saving it.')
-run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
+#run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
 
