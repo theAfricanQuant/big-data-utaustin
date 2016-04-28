@@ -18,6 +18,8 @@ def read_ratings_data(sc):
 
 
 def load_personal_ratings(sc):
+    ''' Reads in personal rating data from the file and
+    returns it in a Spark RDD of (user (0), movie, rating). '''
     data = sc.textFile('target/personal_ratings.txt')
     ratings = data.map(lambda l: l.split()).map(lambda l: Rating(0, int(l[0]), float(l[1])))
 
@@ -25,6 +27,8 @@ def load_personal_ratings(sc):
 
 
 def load_movies_dict():
+    ''' Creates a dictionary of movie ID to movie title
+    based on the MovieLens dataset. '''
     all_movies = dict()
 
     with open('../../lab2/part2/ml-100k/u.item') as f:
@@ -39,6 +43,7 @@ def load_movies_dict():
 
 
 def titles_for_ids(ids):
+    ''' Returns the titles for a list of given movie ids. '''
     movies = load_movies_dict()
     titles = []
 
@@ -65,6 +70,9 @@ def set_up_als():
 
 
 def use_personal_ratings():
+    ''' Returns true if the program was run with the -r option
+    and false if it was not. If it was run with any other options,
+    prints an error message and exits. '''
     if len(sys.argv) >= 2:
         if len(sys.argv) == 2 and sys.argv[1] == '-r':
             return True
@@ -76,6 +84,7 @@ def use_personal_ratings():
 
 
 def show_movie_titles(titles):
+    ''' Prints all movie titles in the given list. '''
     print('Here are your top movie recommendations:')
     for i, title in enumerate(titles):
         num = i + 1
@@ -148,6 +157,8 @@ if use_personal_ratings():
     run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
     model = MatrixFactorizationModel.load(sc, 'target/recommender')
 
+    # Get the 10 best recommended movies for user 0 (the user)
+    # Convert these movie ids into titles
     movies = model.recommendProducts(0, 10)
     movie_ids = [m[1] for m in movies]    
     titles = titles_for_ids(movie_ids)
@@ -158,15 +169,15 @@ if use_personal_ratings():
 
 # Train recommenders
 print('Training the model by varying the number of iterations.')
-#als_vary_iterations(ratings_train, ratings_validation)
+als_vary_iterations(ratings_train, ratings_validation)
 
 print('Training the model by varying the rank.')
-#als_vary_rank(ratings_train, ratings_validation)
+als_vary_rank(ratings_train, ratings_validation)
 
 print('Training the model with the best parameters.')
 accuracy = run_als(ratings_train, ratings_validation, rank=5, iterations=7, l=0.1)
 print('Validation set accuracy: %s' % (accuracy))
 
 print('Training the model on all data and saving it.')
-#run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
+run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
 
