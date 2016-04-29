@@ -20,6 +20,10 @@ def read_ratings_data(sc):
 def load_personal_ratings(sc):
     ''' Reads in personal rating data from the file and
     returns it in a Spark RDD of (user (0), movie, rating). '''
+    if not os.path.exists('target/personal_ratings.txt'):
+        print('If you want personal recommendations, you must first run init_recommender.py')
+        sys.exit(1)
+
     data = sc.textFile('target/personal_ratings.txt')
     ratings = data.map(lambda l: l.split()).map(lambda l: Rating(0, int(l[0]), float(l[1])))
 
@@ -63,9 +67,12 @@ def makePlot(x, y, xlabel, ylabel):
 
 def set_up():
     ''' Sets up random initalization for the program. '''
-    if os.path.exists('target/recommender'):
-        shutil.rmtree('target/recommender')
-    
+    if not os.path.exists('checkpoint/'):
+        os.makedirs('checkpoint/')
+
+    if not os.path.exists('target/'):
+        os.makedirs('target/')
+
     reload(sys)
     sys.setdefaultencoding('utf8')
 
@@ -80,7 +87,7 @@ def use_personal_ratings():
         if len(sys.argv) == 2 and sys.argv[1] == '-r':
             return True
         else:
-            print('Usage: /spark-submit --master local[x] run_recommender.py <-r>')
+            print('Usage: .../spark-submit --master local[x] run_recommender.py <-r>')
             sys.exit(1)
 
     return False
@@ -99,6 +106,9 @@ def run_als(train, validation, rank=10, iterations=7, l=0.01, save_model=False, 
     model = ALS.train(train, rank, iterations, lambda_=l)
     
     if save_model and sc is not None:
+        if os.path.exists('target/recommender'):
+            shutil.rmtree('target/recommender')
+        
         model.save(sc, 'target/recommender')
 
     # Evaluate model
@@ -136,6 +146,8 @@ def als_vary_rank(train, validation):
 
 
 ### START HERE ###
+set_up()
+
 # Initalize Spark context
 sc = SparkContext(appName="Lab5")
 sc.setLogLevel("ERROR")
@@ -143,7 +155,7 @@ sc.setCheckpointDir('checkpoint/')
 
 # Check how we are running
 if use_personal_ratings():
-    print('Recommending movies to you based on results from init_recommender')
+    print('Recommending movies to you based on results from init_recommender.py')
     personal_ratings = load_personal_ratings(sc)
     ratings = read_ratings_data(sc).union(personal_ratings)
 else:
@@ -151,9 +163,6 @@ else:
 
 # Split into train and test
 (ratings_train, ratings_validation) = ratings.randomSplit([0.7, 0.3], seed=42)
-
-# Do any setup required
-set_up()
 
 # Don't want to train all the various models if we're recommending, only the best one
 if use_personal_ratings():
