@@ -1,3 +1,5 @@
+import os
+import sys
 import random
 
 def get_random_movies():
@@ -56,12 +58,18 @@ def rate_movies(movies):
 def save_personal_ratings(ratings):
     ''' Saves the movie ratings in a file called
     personal_ratings.txt. '''
+    if not os.path.exists('target/'):
+        os.makedirs('target/')
+
     with open('target/personal_ratings.txt', 'w') as f:
         for rating in ratings:
             f.write('%s %s\n' % (rating[0], rating[1]))
 
 
 ### START HERE ###
+reload(sys)
+sys.setdefaultencoding('utf8')
+
 movies = get_random_movies()
 ratings = rate_movies(movies)
 save_personal_ratings(ratings)
