@@ -169,11 +169,15 @@ if use_personal_ratings():
     run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)
     model = MatrixFactorizationModel.load(sc, 'target/recommender')
 
-    # Get the 10 best recommended movies for user 0 (the user)
-    # Convert these movie ids into titles
-    movies = model.recommendProducts(0, 10)
-    movie_ids = [m[1] for m in movies]    
-    titles = titles_for_ids(movie_ids)
+    # Get the 20 best recommended movies for user 0 (the user)
+    # Then filter out any they have already rated
+    # Convert the movie ids into titles
+    movies = model.recommendProducts(0, 20)
+    movie_ids = [m[1] for m in movies]
+    rated_movie_ids = [m[0] for m in personal_ratings.map(lambda m: (m[1], m[2])).collect() if m[1] != 0]
+    unwatched_movies = [m for m in movie_ids if m not in rated_movie_ids]
+    top_ten_movies = unwatched_movies[:10]
+    titles = titles_for_ids(top_ten_movies)
 
     show_movie_titles(titles)
 
