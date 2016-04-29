@@ -61,11 +61,14 @@ def makePlot(x, y, xlabel, ylabel):
     plt.show()
 
 
-def set_up_als():
-    ''' Sets up MLLib ALS for training. '''
+def set_up():
+    ''' Sets up random initalization for the program. '''
     if os.path.exists('target/recommender'):
         shutil.rmtree('target/recommender')
     
+    reload(sys)
+    sys.setdefaultencoding('utf8')
+
     ALS.checkpointInterval = 2
 
 
@@ -150,7 +153,7 @@ else:
 (ratings_train, ratings_validation) = ratings.randomSplit([0.7, 0.3], seed=42)
 
 # Do any setup required
-set_up_als()
+set_up()
 
 # Don't want to train all the various models if we're recommending, only the best one
 if use_personal_ratings():
@@ -165,6 +168,7 @@ if use_personal_ratings():
 
     show_movie_titles(titles)
 
+    # Done with the personal recommendations
     sys.exit(0)
 
 # Train recommenders
