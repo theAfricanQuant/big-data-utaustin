@@ -1,0 +1,91 @@
+"""
+Pipeline:
+1. Clean data
+2. Scale data
+3. Transform/Make new features (feature engineering)
+    replace certain features with their mean
+    impute missing features
+    one-hot encoding for categorical vars
+    Label encoding for ordinal vars
+    Replace a feature with feature^2
+4. Train several models w/ cross-val
+    - Iterate
+5. Ensemble Models together
+
+Best practices:
+Random Seeds:
+- Good practice to use the same seed
+- Models, cross-val split, etc.
+- Results should be consistent if you change to a different constant seed..
+
+Jitter:
+- Boost several weak models, with different random seeds to make them slightly
+  different
+- Average of predictions improves AUC
+
+Feature Selection:
+- Remove unimportant/redudnant features
+    - Forward selection
+    - Noise injection
+
+Cross Validation:
+    - Prevent overfitting on the training data
+    - Stratification helps with data is unbalanced
+    - Tradeoffs
+    - Find best hyperparams w/ grid search + CV
+
+Ensembles:
+    - Combine several classifiers to get a final prediction
+        - Convex combination : take prediction files that will just
+          combine the scores of your files.
+        - Metamodeling: Have different machine learning models...
+          you've already done cross-validation on all the models individually.
+          The better way to do metamodeling is to holdout a validation set,
+          and only train each model on the non-validated portion.
+          However, this doesn't always work.
+    - Diversity: bad models can still be useful.
+    - Boosting vs. Ensembling: Boosting will train on the same family of models.
+      You can ensemble any model.
+    - Holdout some training data for ensembling
+    - What is the best way to combine?
+        - Research ideas
+
+Follow the Rules:
+    - No communication outside your team and Piazza
+    - One account per person (http://www.image-net.org/challenges/LSVRC/announcement-June-2-2015)
+    - Do NOT just hack the leaderboards!!! (https://www.kaggle.com/c/restaurant)
+
+Amazon Competition:
+    - Be Disciplined - Validate your hunches against cross-validation.
+    - Start Early
+    - Use the Community
+
+Dataset:
+    - Predict whetehr employee's AWS job will be approved
+    - 9 Categorical features
+        - Manager
+        - Department, Role
+        - Request type
+    - One-Hot Encoding:
+        Map categorical feature to many indicator features
+        feature == u_i <=> one_hot_feature_i = 1
+    - Dimension increases to number of unique values
+    - Lose all ordering information
+    - Try Logistic Regression!
+Starter Code:
+    - One-hot encoding with logicstic regression (C=3)
+    - Public Score: 0.88515
+    - Private Score: 0.88205
+Miroslaw:
+    "... It would be very fun to a light a fire underneath the butts
+    of the people in the higher positions of the leaderboards at my
+    own peril."
+    - Construct all pairs and triplets of features
+    - One-hot encode candidate features.
+    - Greedy feature selection w/ cross-val
+    - Optimize regression regularizer
+    - One-hot encode train+test, fit on train and predict w/ test
+
+    - Look at Miroslaw code, line 82: Last two features were dropped.
+
+"""
