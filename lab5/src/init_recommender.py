@@ -27,7 +27,7 @@ def get_input_for_prompt(prompt):
     ''' Gets an integer input by displaying prompt to the
     user and waiting for input. '''
     while True:
-        value = raw_input('%s: ' % prompt)
+        value = raw_input(f'{prompt}: ')
         try:
             value = int(value)
             return value

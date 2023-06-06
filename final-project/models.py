@@ -17,7 +17,7 @@ def write_to_file(outfile, preds):
     with open(outfile, 'w') as f:
         f.write('Id,Action\n')
         for instance, prediction in pred_write:
-            f.write('{},{}\n'.format(instance, prediction))
+            f.write(f'{instance},{prediction}\n')
 
 
 # Load data

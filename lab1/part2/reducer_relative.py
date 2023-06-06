@@ -4,7 +4,7 @@ import sys
 currentFirstWord = None
 currentFirstWordCount = 0
 
-secondWords = dict()
+secondWords = {}
 
 def calculateForCurrentFirstWord():
     for k, v in secondWords.iteritems():

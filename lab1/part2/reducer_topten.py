@@ -1,29 +1,30 @@
 #!/usr/bin/env python
 import sys
 
-topTen = dict()
+topTen = {}
 currentBigram = None
 currentCount = 0
 
 def updateTopTen():
-    if currentBigram:
-        if len(topTen) < 10:
-            # If length is less than 10, can add this to the dict since we're keeping the top ten
+    if not currentBigram:
+        return
+    if len(topTen) < 10:
+        # If length is less than 10, can add this to the dict since we're keeping the top ten
+        topTen[currentBigram] = currentCount
+    else:
+        # Get smallest
+        minCount = min(topTen.itervalues())
+
+        # Check if currentCount is greater than the smallest in the dict
+        if currentCount > minCount:
+            # Loop until find the smallest, then delete it
+            for k, v in topTen.iteritems():
+                if v == minCount:
+                    del topTen[k]
+                    break
+
+            # Insert the new key
             topTen[currentBigram] = currentCount
-        else:
-            # Get smallest
-            minCount = min(topTen.itervalues())
-
-            # Check if currentCount is greater than the smallest in the dict
-            if currentCount > minCount:
-                # Loop until find the smallest, then delete it
-                for k, v in topTen.iteritems():
-                    if v == minCount:
-                        del topTen[k]
-                        break
-
-                # Insert the new key
-                topTen[currentBigram] = currentCount
 
 # same as the mapper, input comes from the standard input line by line
 for line in sys.stdin:

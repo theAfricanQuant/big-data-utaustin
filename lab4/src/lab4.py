@@ -16,17 +16,17 @@ from pyspark.mllib.util import MLUtils
 # t should be either 'train' or 'test' to load the respective dataset.
 def read_data(t):
     # Make sure we are loading either train or test data
-    if t != 'train' and t != 'test':
+    if t not in ['train', 'test']:
         raise ValueError("Not valid data type.")
-        sys.exit(1)
-
     # First load the prediction data
-    data = pd.read_csv("../dataset/arcene_%s.data" % (t), sep=' ', header=None)
+    data = pd.read_csv(f"../dataset/arcene_{t}.data", sep=' ', header=None)
     data.drop(data.columns[[10000]], axis=1, inplace=True)
 
     # Then the load labels associated with them
     # Replace the class -1 with class 0 for MLLib to use
-    labels = pd.read_csv("../dataset/arcene_%s.labels" % (t), header=None, names=["class"])
+    labels = pd.read_csv(
+        f"../dataset/arcene_{t}.labels", header=None, names=["class"]
+    )
     labels.replace(-1.0, 0.0, inplace=True)
 
     # Combine the two into one dataframe
@@ -72,7 +72,7 @@ def decisionTreeVaryBins(train_data, validation_data):
     bins = [2, 6, 10, 14, 18, 22, 26, 30, 34, 38]
     accuracy = []
     for b in bins:
-        print('maxBins=%s' % (b))
+        print(f'maxBins={b}')
         result = fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=b)
         accuracy.append(result)
 
@@ -85,7 +85,7 @@ def decisionTreeVaryDepth(train_data, validation_data):
     depth = [1, 2, 3, 4, 5]
     accuracy = []
     for d in depth:
-        print('maxDepth=%s' % (d))
+        print(f'maxDepth={d}')
         result = fitDecisionTree(train_data, validation_data, impurity='gini', maxBins=14, maxDepth=d)
         accuracy.append(result)
 
@@ -120,9 +120,9 @@ def randomForestVaryTrees(train_data, validation_data, maxNumTrees=5):
     accuracy = []
     for i in range(1, maxNumTrees+1):
         numTrees = i*100
-        print('numTrees=%s' % numTrees)
+        print(f'numTrees={numTrees}')
         result, time = fitRandomForest(train_data, validation_data, numTrees)
-        print('time to train = %s' % (time))
+        print(f'time to train = {time}')
         trees.append(numTrees)
         accuracy.append(result)
 
@@ -167,7 +167,7 @@ randomForestVaryTrees(train, validation, maxNumTrees=40)
 
 print('Random Forest with most trees I can train, to be examined as a function of N (cores)')
 accuracy, time = fitRandomForest(train, validation, 4000)
-print('Time taken to train = %s (seconds)' % (time))
+print(f'Time taken to train = {time} (seconds)')
 
 print('Final Random Forest model, ran on split data and tested on validation')
 fitRandomForest(train, validation, 2400, impurity='gini', maxBins=14, maxDepth=5)

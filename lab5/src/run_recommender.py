@@ -12,9 +12,9 @@ def read_ratings_data(sc):
     ''' Reads in the MovieLens rating data from the file
     and returns it in a Spark RDD of (user, movie, rating). '''
     data = sc.textFile('../../lab2/part2/ml-100k/u.data')
-    ratings = data.map(lambda l: l.split()).map(lambda l: Rating(int(l[0]), int(l[1]), float(l[2])))
-
-    return ratings
+    return data.map(lambda l: l.split()).map(
+        lambda l: Rating(int(l[0]), int(l[1]), float(l[2]))
+    )
 
 
 def load_personal_ratings(sc):
@@ -25,22 +25,22 @@ def load_personal_ratings(sc):
         sys.exit(1)
 
     data = sc.textFile('target/personal_ratings.txt')
-    ratings = data.map(lambda l: l.split()).map(lambda l: Rating(0, int(l[0]), float(l[1])))
-
-    return ratings
+    return data.map(lambda l: l.split()).map(
+        lambda l: Rating(0, int(l[0]), float(l[1]))
+    )
 
 
 def load_movies_dict():
     ''' Creates a dictionary of movie ID to movie title
     based on the MovieLens dataset. '''
-    all_movies = dict()
+    all_movies = {}
 
     with open('../../lab2/part2/ml-100k/u.item') as f:
         for line in f:
             info = line.split('|')
             movie_id = int(info[0])
             movie_title = info[1]
-            
+
             all_movies[movie_id] = movie_title
 
     return all_movies
@@ -49,12 +49,7 @@ def load_movies_dict():
 def titles_for_ids(ids):
     ''' Returns the titles for a list of given movie ids. '''
     movies = load_movies_dict()
-    titles = []
-
-    for i in ids:
-        titles.append(movies[i])
-
-    return titles
+    return [movies[i] for i in ids]
 
 
 def makePlot(x, y, xlabel, ylabel):
@@ -86,9 +81,8 @@ def use_personal_ratings():
     if len(sys.argv) >= 2:
         if len(sys.argv) == 2 and sys.argv[1] == '-r':
             return True
-        else:
-            print('Usage: .../spark-submit --master local[x] run_recommender.py <-r>')
-            sys.exit(1)
+        print('Usage: .../spark-submit --master local[x] run_recommender.py <-r>')
+        sys.exit(1)
 
     return False
 
@@ -98,17 +92,17 @@ def show_movie_titles(titles):
     print('Here are your top movie recommendations:')
     for i, title in enumerate(titles):
         num = i + 1
-        print('%s. %s' % (num, title))
+        print(f'{num}. {title}')
 
 
 def run_als(train, validation, rank=10, iterations=7, l=0.01, save_model=False, sc=None):
     ''' Trains an ALS on train and reports the accuracy on validation. '''
     model = ALS.train(train, rank, iterations, lambda_=l)
-    
+
     if save_model and sc is not None:
         if os.path.exists('target/recommender'):
             shutil.rmtree('target/recommender')
-        
+
         model.save(sc, 'target/recommender')
 
     # Evaluate model
@@ -117,9 +111,7 @@ def run_als(train, validation, rank=10, iterations=7, l=0.01, save_model=False, 
         predictions = model.predictAll(testData).map(lambda r: ((r[0], r[1]), r[2]))
         origAndPreds = validation.map(lambda r: ((r[0], r[1]), r[2])).join(predictions)
         correct = origAndPreds.map(lambda r: (1 if (abs(r[1][0] - r[1][1]) <= 1.0) else 0))
-        accuracy = correct.mean()
-        return accuracy
-
+        return correct.mean()
     return None
 
 
@@ -193,7 +185,7 @@ als_vary_rank(ratings_train, ratings_validation)
 
 print('Training the model with the best parameters.')
 accuracy = run_als(ratings_train, ratings_validation, rank=5, iterations=7, l=0.1)
-print('Validation set accuracy: %s' % (accuracy))
+print(f'Validation set accuracy: {accuracy}')
 
 print('Training the model on all data and saving it.')
 run_als(ratings, None, rank=5, iterations=7, l=0.1, save_model=True, sc=sc)

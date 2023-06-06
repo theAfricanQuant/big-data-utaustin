@@ -21,8 +21,8 @@ def parse_args():
 
 # Creates a list of k random locations, given the width and height of the image.
 def random_pixels(k, width, height):
-    random_pixels = list()
-    for i in xrange(k):
+    random_pixels = []
+    for _ in xrange(k):
         x = randint(0, width - 1)
         y = randint(0, height - 1)
         random_pixels.append((x, y))
@@ -33,12 +33,7 @@ def random_pixels(k, width, height):
 # Builds a dict of  where the key is a centroid location
 # and the value is an empty list (for assignments).
 def build_assignments_dict(centroids):
-    assignments = dict()
-
-    for centroid in centroids:
-        assignments[centroid] = list()
-
-    return assignments
+    return {centroid: [] for centroid in centroids}
 
 
 # Assigns each pixel location to the nearest centriod location
@@ -93,8 +88,8 @@ def get_average_location(points):
 # Creates a new list of centroids, given the current centroids
 # and the dictionary of current assignments.
 def move_centroids(centroids, assignments):
-    new_centroids = list()
-    
+    new_centroids = []
+
     for centroid in centroids:
         average = get_average_location(assignments[centroid])
         if average is None:
@@ -108,7 +103,7 @@ def move_centroids(centroids, assignments):
 # Runs k means iter number of times.
 def k_means(centroids, width, height, iter=100):
     old_centroids = centroids
-    for i in xrange(iter):
+    for _ in xrange(iter):
         assignments = assign(centroids, width, height)
         centroids = move_centroids(centroids, assignments)
 
@@ -124,12 +119,7 @@ def k_means(centroids, width, height, iter=100):
 # Determines the color of each pixel at each point in the points list.
 # Returns a list of colors as (R, G, B).
 def get_colors(points, px):
-    colors = list()
-
-    for point in points:
-        colors.append(px[point[0], point[1]])
-
-    return colors
+    return [px[point[0], point[1]] for point in points]
 
 
 # Finds the color in a palette that is closest to the given color.

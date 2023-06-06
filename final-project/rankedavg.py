@@ -18,17 +18,14 @@ def rank_avg(files, outfile):
             for rank, item in enumerate(sorted(file_ranks)):
                 ranks[(item[1],item[2])].append(rank)
 
-        average_ranks = []
-        for k in sorted(ranks):
-            average_ranks.append((sum(ranks[k])/len(ranks[k]), k))
-
-        ranked_ranks = []
-        for rank, k in enumerate(sorted(average_ranks)):
-            ranked_ranks.append((k[1][0], k[1][1], rank/(len(average_ranks) - 1)))
-
+        average_ranks = [(sum(ranks[k])/len(ranks[k]), k) for k in sorted(ranks)]
+        ranked_ranks = [
+            (k[1][0], k[1][1], rank / (len(average_ranks) - 1))
+            for rank, k in enumerate(sorted(average_ranks))
+        ]
         out.write('Id,Action\n')
         for k in sorted(ranked_ranks):
-            out.write('{},{}\n'.format(k[1], k[2]))
+            out.write(f'{k[1]},{k[2]}\n')
 
 def main():
     if len(sys.argv) != 2:
@@ -41,8 +38,8 @@ def main():
         'output/xgb_155trees_colsampletree.5_learningrate0.3_maxdepth8_.86928.csv', # XGBoost
         'output/rf_1ktrees_entropy_auto_bootstrapped_.86757.csv', # Random Forest
     ]
-    
-    outfile = 'output/{}.csv'.format(sys.argv[1])
+
+    outfile = f'output/{sys.argv[1]}.csv'
     rank_avg(files, outfile)
 
 if __name__ == '__main__':

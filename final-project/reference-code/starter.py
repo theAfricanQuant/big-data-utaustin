@@ -25,11 +25,16 @@ def load_data(filename, use_labels=True):
     """
 
     # load column 1 to 8 (ignore last one)
-    data = np.loadtxt(open("../data/" + filename), delimiter=',',
-                      usecols=range(1, 9), skiprows=1)
+    data = np.loadtxt(
+        open(f"../data/{filename}"),
+        delimiter=',',
+        usecols=range(1, 9),
+        skiprows=1,
+    )
     if use_labels:
-        labels = np.loadtxt(open("../data/" + filename), delimiter=',',
-                            usecols=[0], skiprows=1)
+        labels = np.loadtxt(
+            open(f"../data/{filename}"), delimiter=',', usecols=[0], skiprows=1
+        )
     else:
         labels = np.zeros(data.shape[0])
     return labels, data
@@ -96,7 +101,7 @@ def main():
     model.fit(X, y)
     preds = model.predict_proba(X_test)[:, 1]
     filename = input("Enter name for submission file: ")
-    save_results(preds, filename + ".csv")
+    save_results(preds, f"{filename}.csv")
 
 if __name__ == '__main__':
     main()

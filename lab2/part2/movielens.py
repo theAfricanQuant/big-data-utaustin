@@ -27,7 +27,7 @@ analyze_genre_number = 1
 # Given an input line from a movie item (u.item), this will return a list of
 # numbers that are the genre numbers that the movie belongs to.
 def get_genre_numbers(movie):
-    genres = list()
+    genres = []
     start_index = 5 # Movie genres start at index 5
 
     # There are 18 genres
@@ -46,11 +46,7 @@ def get_genre_numbers(movie):
 # The first element is the count of movies in a particular genere
 # and the second is the sum of all the ratings in a particular genre.
 def build_ratings_dict():
-    dictionary = dict()
-    for i in xrange(19):
-        dictionary[i] = [0, 0]
-
-    return dictionary
+    return {i: [0, 0] for i in xrange(19)}
 
 
 # Opens the database.txt file and returns it as a dict.
@@ -63,25 +59,25 @@ def open_database():
 # Writes the database dict to a file.
 def write_to_file(db):
     with open('database.txt', 'w') as f:
-        f.write("%s" % db)
+        f.write(f"{db}")
 
 
 # Builds the user database.
 def build_database():
     # Builds a dict where key is User ID and value is (age, genre ratings dict) tuple
-    users = dict()
+    users = {}
     with open('u.user', 'r') as user_file:
        for line in user_file:
             fields = line.split("|")
             users[fields[0]] = (fields[1], build_ratings_dict())
-      
+
     # Builds a dict where key is movie ID and value is tuple of genre numbers
-    movies = dict()
+    movies = {}
     with open('u.item', 'r') as movie_file:
         for line in movie_file:
             fields = line.split("|")
             movies[fields[0]] = get_genre_numbers(fields)
-       
+
     # Goes line by line and fills in user ratings dicts accordingly
     with open('u.data', 'r') as data_file:
         for line in data_file:
@@ -99,7 +95,7 @@ def build_database():
                 current = ratings[genre]
                 current[0] += 1 # count
                 current[1] += int(fields[2]) # sum of ratings
-    
+
     # Finally write this to the database.txt file so we can use it later
     write_to_file(users)
     return users
@@ -120,7 +116,7 @@ def get_attributes_for_user(user, genre_number=analyze_genre_number):
 
 # Creates k new random centroids. Writes these to k distinct files.
 def create_centroids(users, k=16):
-    centroids = list()
+    centroids = []
 
     for i in xrange(k):
         # Pick a random user ID and get that user's attributes for the centroid
@@ -128,9 +124,9 @@ def create_centroids(users, k=16):
         attributes = list(get_attributes_for_user(users[key]))
         attributes.append(i) # Append the index so we know what number centroid it is later
         centroids.append(attributes) # Add it to the list to return
-        
+
         # Write to file
-        filename = "centroid%s.txt" % i
+        filename = f"centroid{i}.txt"
         with open(filename, 'w') as f:
             f.write("%s\n" % attributes)
 
@@ -139,10 +135,10 @@ def create_centroids(users, k=16):
 
 # Reads all k centroid files and puts them into a list.
 def read_centroids(k=16):
-    centroids = list()
+    centroids = []
 
     for i in xrange(k):
-        filename = "centroid%s.txt" % i
+        filename = f"centroid{i}.txt"
         with open(filename, 'r') as f:
             for line in f:
                 attributes = eval(line)
@@ -162,12 +158,14 @@ class MRMovielens(MRJob):
         ]
 
         # Add 49 normal MR jobs
-        for i in xrange(49):
-            jobs.append(
-                MRStep(mapper_init=self.before_mapper,
-                       mapper=self.k_means_mapper,
-                       reducer=self.k_means_reducer))
-
+        jobs.extend(
+            MRStep(
+                mapper_init=self.before_mapper,
+                mapper=self.k_means_mapper,
+                reducer=self.k_means_reducer,
+            )
+            for _ in xrange(49)
+        )
         # Add the last job - final clustering and output of results
         jobs.append(
             MRStep(mapper_init=self.before_mapper,
@@ -237,7 +235,7 @@ class MRMovielens(MRJob):
         new_centroid = (age, genre_rating, key[2])
 
         # Save the new centroid
-        filename = "centroid%s.txt" % key[2]
+        filename = f"centroid{key[2]}.txt"
         with open(filename, 'w') as f:
             f.write("%s\n" % list(new_centroid))
 
